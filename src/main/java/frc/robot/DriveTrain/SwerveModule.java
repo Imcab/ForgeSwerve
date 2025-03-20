@@ -18,12 +18,11 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lib.CommandBase.Sim.RealDevice;
 import lib.CommandBase.Sim.SimulatedDevice;
 import lib.CommandBase.Sim.SimulatedSubsystem;
 
-public class SwerveModule extends SubsystemBase implements SimulatedSubsystem{
+public class SwerveModule implements SimulatedSubsystem{
 
     public static final DCMotor driveGearbox = DCMotor.getNEO(1);
     public static final DCMotor turnGearbox = DCMotor.getNEO(1);
@@ -176,10 +175,11 @@ public class SwerveModule extends SubsystemBase implements SimulatedSubsystem{
 
         turnSparkMax.configure(config_turn, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+        driveSparkMax.setCANTimeout(0);
+        turnSparkMax.setCANTimeout(0);
     }
 
     //Main Loop
-    @Override
     public void periodic(){
         handleSubsystemRealityLoop();
 
