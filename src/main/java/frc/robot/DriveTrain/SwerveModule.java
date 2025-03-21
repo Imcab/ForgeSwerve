@@ -10,7 +10,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -21,12 +20,15 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import lib.CommandBase.Sim.RealDevice;
 import lib.CommandBase.Sim.SimulatedDevice;
 import lib.CommandBase.Sim.SimulatedSubsystem;
+import lib.Constants.ProfileGains.PIDGains;
+import lib.Constants.ProfileGains.SimpleFeedForwardGains;
 
 public class SwerveModule implements SimulatedSubsystem{
 
-    public static final DCMotor driveGearbox = DCMotor.getNEO(1);
-    public static final DCMotor turnGearbox = DCMotor.getNEO(1);
-    private static final double WHEELRADIUS = Units.inchesToMeters(2.0);
+    public static final int driveCurrentLimit = 50;
+    public static final int turnCurrentLimit = 20;
+    public static final DCMotor NEOGearbox = DCMotor.getNEO(1);
+    public static final double WHEELRADIUS = Units.inchesToMeters(2.0);
     public static final double driveMotorReduction = 5.36;
     public static final double turnMotorReduction =  18.75;
 
@@ -50,20 +52,31 @@ public class SwerveModule implements SimulatedSubsystem{
     @SimulatedDevice
     private DCMotorSim driveSim =
     new DCMotorSim(
-        LinearSystemId.createDCMotorSystem(driveGearbox, 0.025, driveMotorReduction),
-        driveGearbox);
+        LinearSystemId.createDCMotorSystem(NEOGearbox, 0.025, driveMotorReduction),
+        NEOGearbox);
     
     @SimulatedDevice
     private DCMotorSim turnSim =
     new DCMotorSim(
-        LinearSystemId.createDCMotorSystem(turnGearbox, 0.004, turnMotorReduction),
-        turnGearbox);
+        LinearSystemId.createDCMotorSystem(NEOGearbox, 0.004, turnMotorReduction),
+        NEOGearbox);
 
     private final PIDController drivePID;
     private final PIDController turnPID;
-    private final SimpleMotorFeedforward driveFeedforward;
+
+    private final SimpleFeedForwardGains driveFFGains;
+    private final PIDGains drivePIDGains;
+    private final PIDGains turnPIDGains;
+
     private Rotation2d angleSetpoint = null;
     private Double speedSetpoint = null;
+
+    private double ffVolts = 0;
+
+    private double driveVelocity;
+
+    private double driveVoltage;
+    private double turnVoltage;
 
     private double Offset;
 
@@ -71,32 +84,135 @@ public class SwerveModule implements SimulatedSubsystem{
     private boolean isTurnMotorInverted;
 
     private Rotation2d moduleAngle = new Rotation2d();
-    private double driveVelocity = 0;
-
-    private double driveVoltage;
-    private double turnVoltage;
-
+    
     public SwerveModule(int index){
-
-        initializeSubsystemDevices();
    
         //Use real Configuration
         if (!isInSimulation()) {
-            drivePID = new PIDController(0.05, 0, 0);
-            driveFeedforward = new SimpleMotorFeedforward(0.1, 0.08);
-            turnPID = new PIDController(5.0, 0,0);
-
+            this.turnPIDGains = new PIDGains(5.0, 0,0);
+            this.drivePIDGains = new PIDGains(0.05, 0, 0);
+            this.driveFFGains = new SimpleFeedForwardGains(0.1, 0.08, 0);
+            
             createSparks(index);
 
         }else{
         //Use sim Configuration
-            drivePID = new PIDController(0.05, 0,0);
-            driveFeedforward = new SimpleMotorFeedforward(0, 0.0789); 
-            turnPID = new PIDController(8.0, 0,0);
+            this.turnPIDGains = new PIDGains(8.0, 0,0);
+            this.drivePIDGains = new PIDGains(0.05, 0, 0);
+            this.driveFFGains = new SimpleFeedForwardGains(0, 0.0789, 0);
         }
+
+        drivePID = new PIDController(drivePIDGains.kP(), drivePIDGains.kI(), drivePIDGains.kD());
+        turnPID = new PIDController(turnPIDGains.kP(), turnPIDGains.kI(),turnPIDGains.kD());
 
         turnPID.enableContinuousInput(-Math.PI, Math.PI);
 
+        initializeSubsystemDevices();
+
+    }
+
+    //Main Loop
+    public void periodic(){
+        handleSubsystemRealityLoop();
+
+        if (angleSetpoint != null) {
+            this.turnVoltage = turnPID.calculate(moduleAngle.getRadians());
+
+            if (speedSetpoint != null) {
+                this.driveVoltage = ffVolts + drivePID.calculate(driveVelocity);
+            }else{
+                this.driveVoltage = 0;
+                drivePID.reset();
+            }
+        }else{
+            this.turnVoltage = 0;
+        }
+    }
+
+    @Override
+    public void SimulationDevicesPeriodic(){
+
+        this.moduleAngle = new Rotation2d(turnSim.getAngularPositionRad());
+        this.driveVelocity = driveSim.getAngularVelocityRadPerSec();
+
+        driveSim.setInputVoltage(MathUtil.clamp(driveVoltage, -12.0, 12.0));
+        turnSim.setInputVoltage(MathUtil.clamp(turnVoltage, -12.0, 12.0));
+
+        driveSim.update(0.02);
+        turnSim.update(0.02);
+    }
+
+    @Override
+    public void RealDevicesPeriodic(){
+
+        this.moduleAngle = 
+        absoluteEncoder.isConnected() ? 
+            Rotation2d.fromRotations(absoluteEncoder.getAbsolutePosition().getValueAsDouble() - Offset) : 
+            Rotation2d.fromRotations(enc_turn.getPosition() / turnMotorReduction);
+
+        this.driveVelocity = Units.rotationsPerMinuteToRadiansPerSecond(enc_drive.getVelocity());
+    }
+
+    public void setDriveVelocity(double velocity){
+        this.ffVolts = driveFFGains.kS() * Math.signum(velocity) + driveFFGains.kV() * velocity;
+        drivePID.setSetpoint(velocity);
+    }
+
+    public void setTurnPos(Rotation2d rot){
+        turnPID.setSetpoint(rot.getRadians());
+    }
+
+    public double getDriveModuleVoltage(){
+        return driveVoltage;
+    }
+
+    public double getTurnModuleVoltage(){
+        return turnVoltage;
+    }
+
+    public double getModuleVelocity(){
+        return driveVelocity * WHEELRADIUS;
+    }
+
+    public double getDrivePositionMeters(){
+
+        double position = isInSimulation() ? driveSim.getAngularPositionRad() : Units.rotationsToRadians(enc_drive.getPosition());
+
+        return position * WHEELRADIUS;
+      }
+
+    public Rotation2d getModuleRotation(){
+        return moduleAngle;
+    }
+
+    public void runSetpoint(SwerveModuleState desiredState){
+        desiredState.optimize(getModuleRotation());
+
+        desiredState.cosineScale(getModuleRotation());
+
+        angleSetpoint = desiredState.angle;
+        speedSetpoint = desiredState.speedMetersPerSecond;
+
+        setTurnPos(angleSetpoint);
+        setDriveVelocity(speedSetpoint / WHEELRADIUS);
+
+    }
+
+    public void toHome(){
+        runSetpoint(new SwerveModuleState(0, new Rotation2d()));
+    }
+
+    public SwerveModulePosition getPosition(){
+        return new SwerveModulePosition(getDrivePositionMeters(), getModuleRotation());
+    }
+
+    public SwerveModuleState getState(){
+        return new SwerveModuleState(getModuleVelocity(), getModuleRotation());
+    }
+
+    public void stopModule(){   
+        angleSetpoint = null;
+        speedSetpoint = null;
     }
 
     private void createSparks(int index){
@@ -177,119 +293,5 @@ public class SwerveModule implements SimulatedSubsystem{
 
         driveSparkMax.setCANTimeout(0);
         turnSparkMax.setCANTimeout(0);
-    }
-
-    //Main Loop
-    public void periodic(){
-        handleSubsystemRealityLoop();
-
-        if (angleSetpoint != null) {
-            setTurnVolts(turnPID.calculate(getModuleRotation().getRadians(), angleSetpoint.getRadians()));
-
-            if (speedSetpoint != null) {
-                double adjustSpeedSetpoint = speedSetpoint * Math.cos(turnPID.getError());
-                double velocityRadPerSec = adjustSpeedSetpoint / WHEELRADIUS;
-
-                setDriveVolts(driveFeedforward.calculate(velocityRadPerSec) + 
-                drivePID.calculate(
-                    Units.rotationsPerMinuteToRadiansPerSecond(driveVelocity) / driveMotorReduction, velocityRadPerSec));
-            }
-        }
-    }
-
-    @Override
-    public void SimulationDevicesPeriodic(){
-
-        driveSim.update(0.02);
-        turnSim.update(0.02);
-
-        this.moduleAngle = new Rotation2d(turnSim.getAngularPositionRad());
-
-        this.driveVelocity = driveSim.getAngularVelocityRadPerSec();
-
-    }
-
-    @Override
-    public void RealDevicesPeriodic(){
-        this.moduleAngle = Rotation2d.fromRotations(absoluteEncoder.getAbsolutePosition().getValueAsDouble() - Offset);
-        this.driveVelocity = Units.rotationsPerMinuteToRadiansPerSecond(enc_drive.getVelocity());
-    }
-
-    public void setDriveVolts(double volts){
-
-        this.driveVoltage = volts;
-
-        if (isInSimulation()) {
-            driveSim.setInputVoltage(MathUtil.clamp(volts, -12, 12));
-        }else{
-            driveSparkMax.setVoltage(volts);
-        }
- 
-    }
-
-    public void setTurnVolts(double volts){
-
-        this.turnVoltage = volts;
-
-        if (isInSimulation()) {
-            turnSim.setInputVoltage(MathUtil.clamp(volts, -12, 12));
-        }else{
-            turnSparkMax.setVoltage(volts);
-        }
-    }
-
-    public double getDriveModuleVoltage(){
-        return driveVoltage;
-    }
-
-    public double getTurnModuleVoltage(){
-        return turnVoltage;
-    }
-
-    public double getModuleVelocity(){
-        return (driveVelocity * WHEELRADIUS) / driveMotorReduction;
-    }
-
-    public double getDrivePositionMeters(){
-
-        double position = !isInSimulation() ? enc_drive.getPosition() : Units.radiansToRotations(driveSim.getAngularPositionRad());
-
-        return Units.rotationsToRadians(
-          position / driveMotorReduction)
-           
-          * WHEELRADIUS;
-      }
-
-    public Rotation2d getModuleRotation(){
-        return moduleAngle;
-    }
-
-    public void runSetpoint(SwerveModuleState desiredState){
-        desiredState.optimize(getModuleRotation());
-
-        desiredState.cosineScale(getModuleRotation());
-
-        angleSetpoint = desiredState.angle;
-        speedSetpoint = desiredState.speedMetersPerSecond;
-
-    }
-
-    public void toHome(){
-        runSetpoint(new SwerveModuleState(0, new Rotation2d()));
-    }
-
-    public SwerveModulePosition getPosition(){
-        return new SwerveModulePosition(getDrivePositionMeters(), getModuleRotation());
-    }
-
-    public SwerveModuleState getState(){
-        return new SwerveModuleState(getModuleVelocity(), getModuleRotation());
-    }
-
-    public void stopModule(){
-        setDriveVolts(0);
-        setTurnVolts(0);
-        angleSetpoint = null;
-        speedSetpoint = null;
     }
 }
