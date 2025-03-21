@@ -21,6 +21,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import lib.CommandBase.Sim.RealDevice;
 import lib.CommandBase.Sim.SimulatedSubsystem;
 import lib.Field.FieldObject;
@@ -159,6 +160,8 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             suppliers[3],
             ()-> getRotation().getRadians()
         );
+
+        SmartDashboard.putData("NetworkSwerve/PoseFinder", pathFinder);
 
         connection.sendBoolean(isInSimulation());
     }
