@@ -1,4 +1,4 @@
-package lib.CommandBase.Sim;
+package lib.Sim;
 
 import java.lang.reflect.Field;
 

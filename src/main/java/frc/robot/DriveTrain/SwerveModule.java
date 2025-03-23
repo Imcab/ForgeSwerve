@@ -17,11 +17,11 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import lib.CommandBase.Sim.RealDevice;
-import lib.CommandBase.Sim.SimulatedDevice;
-import lib.CommandBase.Sim.SimulatedSubsystem;
 import lib.Constants.ProfileGains.PIDGains;
 import lib.Constants.ProfileGains.SimpleFeedForwardGains;
+import lib.Sim.RealDevice;
+import lib.Sim.SimulatedDevice;
+import lib.Sim.SimulatedSubsystem;
 
 public class SwerveModule implements SimulatedSubsystem{
 

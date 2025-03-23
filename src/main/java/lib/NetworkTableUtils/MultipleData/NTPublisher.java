@@ -20,11 +20,44 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 
 /**
  * Utility class for publishing and retrieving various data types from NetworkTables.
  * This class allows for easy interaction with the NetworkTables API using structured and primitive data types.
+ * 
+ * <p><b>Supported Data Types:</b></p>
+ * <ul>
+ *   <li>{@code double}</li>
+ *   <li>{@code double[]}</li>
+ *   <li>{@code boolean}</li>
+ *   <li>{@code boolean[]}</li>
+ *   <li>{@code String}</li>
+ *   <li>{@code String[]}</li>
+ *   <li>{@code ChassisSpeeds}</li>
+ *   <li>{@code ChassisSpeeds[]}</li>
+ *   <li>{@code Pose2d}</li>
+ *   <li>{@code Pose2d[]}</li>
+ *   <li>{@code Pose3d}</li>
+ *   <li>{@code Pose3d[]}</li>
+ *   <li>{@code Rotation2d}</li>
+ *   <li>{@code Rotation2d[]}</li>
+ *   <li>{@code Rotation3d}</li>
+ *   <li>{@code Rotation3d[]}</li>
+ *   <li>{@code Transform2d}</li>
+ *   <li>{@code Transform2d[]}</li>
+ *   <li>{@code Transform3d}</li>
+ *   <li>{@code Transform3d[]}</li>
+ *   <li>{@code Translation2d}</li>
+ *   <li>{@code Translation2d[]}</li>
+ *   <li>{@code Translation3d}</li>
+ *   <li>{@code Translation3d[]}</li>
+ *   <li>{@code SwerveModuleState}</li>
+ *   <li>{@code SwerveModuleState[]}</li>
+ *   <li>{@code SwerveModulePosition}</li>
+ *   <li>{@code SwerveModulePosition[]}</li>
+ *   <li>{@code Color}</li>
+ *   <li>{@code Sendable}</li>
+ * </ul>
  */
 public class NTPublisher{
 
@@ -346,11 +379,12 @@ public class NTPublisher{
     }
 
     /**
-     * Publishes a {@link Color} value as a hex string to NetworkTables.
+     * Publishes a {@link Sendable} object to NetworkTables.
+     * Ensures that the sendable is only added once per unique table entry.
      *
      * @param tableName The name of the table.
      * @param key       The key for the entry.
-     * @param value     The {@link Color} object to publish.
+     * @param value     The {@link Sendable} object to publish.
      */
     public static void publish(String tableName, String key, Sendable value) {
         String fullPath = String.format("%s/%s", tableName, key);
@@ -366,12 +400,11 @@ public class NTPublisher{
     }
 
     /**
-     * Publishes a {@link Sendable} object to NetworkTables.
-     * Ensures that the sendable is only added once per unique table entry.
+     * Publishes a {@link Color} value as a hex string to NetworkTables.
      *
      * @param tableName The name of the table.
      * @param key       The key for the entry.
-     * @param value     The {@link Sendable} object to publish.
+     * @param value     The {@link Color} object to publish.
      */
     public static void publish(String tableName, String key, Color value){
         ntInstance.getTable(tableName).getEntry(key).setString(value.toHexString());

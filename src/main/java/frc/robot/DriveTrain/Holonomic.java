@@ -23,14 +23,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import lib.CommandBase.Sim.RealDevice;
-import lib.CommandBase.Sim.SimulatedSubsystem;
 import lib.Field.FieldObject;
-import lib.NetworkTableUtils.MultipleData.NTPublisher;
 import lib.NetworkTableUtils.NTSubsystem.NetworkSubsystem;
 import lib.NetworkTableUtils.NTSubsystem.Interfaces.AutoNetworkPublisher;
 import lib.NetworkTableUtils.NTSubsystem.Interfaces.NetworkCommand;
-import lib.NetworkTableUtils.NormalPublishers.NTBoolean;
+import lib.Sim.RealDevice;
+import lib.Sim.SimulatedSubsystem;
 import lib.SwerveLib.PathFinding.PoseFinder;
 import lib.SwerveLib.Utils.SwerveModuleStateSupplier;
 import lib.SwerveLib.Visualizers.SwerveWidget;
@@ -86,11 +84,22 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
 
     private SwerveModule[] modules = new SwerveModule[4];
 
-    private final NTBoolean connection = new NTBoolean("NetworkSwerve/IsSimulated");
+    public PathConstraints selectedConstraints;
 
-    public Holonomic(){
-        super("NetworkSwerve");
+    public enum SwervePathConstraints{
+        kFast, kNormal
+    }
+
+    public Holonomic(SwervePathConstraints constraints){
+        super("NetworkSwerve", true);
+
         initializeSubsystemDevices("NetworkSwerve/Devices/Holonomic");
+
+        if (constraints == SwervePathConstraints.kNormal) {
+            this.selectedConstraints = normalPathConstraints;
+        }else{
+            this.selectedConstraints = fastPathConstraints;
+        }
 
         if (isInSimulation()) {
             navX = null;
@@ -121,7 +130,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
 
         pathFinder = new PoseFinder(
             FieldObject.REEFSCAPE,
-            fastPathConstraints,
+            selectedConstraints,
             this::runVelocity,
             this::getEstimatedPosition,
             this::setPose,
@@ -158,7 +167,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             ()-> modules[3].getModuleRotation().getRadians());
 
         SwerveWidget.buildCustomPath(
-            "NetworkSwerve",
+            getTableKey(),
             "Elastic/SwerveWidget",
             suppliers[0],
             suppliers[1],
@@ -167,12 +176,13 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             ()-> getRotation().getRadians()
         );
 
-        NTPublisher.publish("NetworkSwerve", "PoseFinder/Info", pathFinder);
+        publishOutput("PoseFinder", pathFinder);
 
-        connection.sendBoolean(isInSimulation());
+        publishOutput("Modules/Locations", getModuleLocations());
+
+        publishOutput("IsInSim", isInSimulation());
     }
 
-    @AutoNetworkPublisher(key = "Modules/Locations")
     private Translation2d[] getModuleLocations(){
         return new Translation2d[] {
             new Translation2d(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
@@ -285,10 +295,15 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         runVelocity(new ChassisSpeeds());
     }
 
-    public void modulesToHome(){
+    public void homeModules(){
         for (int i = 0; i < 4; i++) {
               modules[i].toHome();
           }
+    }
+
+    @NetworkCommand("Commands/HomeModules")
+    public Command homeModulesCommand(){
+        return Commands.runOnce(()-> homeModules(), this);
     }
 
     public void stopWithX() {
@@ -298,6 +313,11 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         }
         kinematics.resetHeadings(headings);
         stop();
+    }
+
+    @NetworkCommand("Commands/StopWithX")
+    public Command stopXCommand(){
+        return Commands.runOnce(()-> stopWithX(), this);
     }
 
     public void resetHeading(){
