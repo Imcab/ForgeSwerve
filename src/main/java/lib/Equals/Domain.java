@@ -34,10 +34,6 @@ public class Domain{
             throw new IllegalArgumentException("The minimum value must be less than the maximum value");
         }
 
-        if (min == 0 && max == 0){
-            throw new IllegalArgumentException("The domain can't be empty!, use an empty domain instead");  
-        }
-
         this.min = min;
         this.max = max;
 
@@ -49,10 +45,6 @@ public class Domain{
 
         if (min > max){
             throw new IllegalArgumentException("The minimum value must be less than the maximum value");
-        }
-
-        if (min == 0 && max == 0){
-            throw new IllegalArgumentException("The domain can't be empty!, use an empty domain instead");  
         }
 
         this.min = min;

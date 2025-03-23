@@ -4,6 +4,10 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import lib.NetworkTableUtils.NormalPublishers.NTArrayBoolean;
 import lib.NetworkTableUtils.NormalPublishers.NTArrayDouble;
 
+/**
+ * A utility class for publishing joystick values (from all joystick types) to NetworkTables.
+ * This class publishes various joystick axes, button states, and POV hat states.
+ */
 public class NTJoystick {
 
     private NTArrayDouble rightAxis;
@@ -15,6 +19,12 @@ public class NTJoystick {
     private NTArrayBoolean stickPressed;
     private NTArrayBoolean povs;
     
+    /**
+     * Creates a new {@code NTJoystick} instance that publishes joystick data to the specified NetworkTables key.
+     *
+     * @param key The base NetworkTables key used to publish the joystick data. Subkeys will be generated 
+     *            for different joystick components (e.g., right axis, left axis, buttons).
+     */
     public NTJoystick(String key){
         this.rightAxis = new NTArrayDouble(key + "/rightAxis");
         this.leftAxis = new NTArrayDouble(key + "leftAxis");
@@ -27,6 +37,12 @@ public class NTJoystick {
 
     }
 
+    /**
+     * Publishes the state of the Xbox controller to NetworkTables.
+     * The data includes axes, buttons, bumpers, stick presses, and POV hat states.
+     *
+     * @param xbox The {@link CommandXboxController} from which the joystick data will be collected.
+     */
     public void sendXboxController(CommandXboxController xbox){
         rightAxis.sendDouble(new double[]{xbox.getRightY(), xbox.getRightX()});
         leftAxis.sendDouble(new double[]{xbox.getLeftY(), xbox.getLeftX()});

@@ -107,7 +107,7 @@ public class SwerveModule implements SimulatedSubsystem{
 
         turnPID.enableContinuousInput(-Math.PI, Math.PI);
 
-        initializeSubsystemDevices();
+        initializeSubsystemDevices("NetworkSwerve/Devices/Modules");
 
     }
 

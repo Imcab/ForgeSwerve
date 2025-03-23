@@ -66,5 +66,9 @@ public class DriveCommands {
         drive);
   }
 
+  public static Command resetHeading(Holonomic drive){
+        return Commands.runOnce(drive::resetHeading, drive);
+  }
+
 
 }

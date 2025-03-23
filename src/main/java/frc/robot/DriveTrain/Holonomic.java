@@ -21,12 +21,15 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import lib.CommandBase.Sim.RealDevice;
 import lib.CommandBase.Sim.SimulatedSubsystem;
 import lib.Field.FieldObject;
+import lib.NetworkTableUtils.MultipleData.NTPublisher;
 import lib.NetworkTableUtils.NTSubsystem.NetworkSubsystem;
 import lib.NetworkTableUtils.NTSubsystem.Interfaces.AutoNetworkPublisher;
+import lib.NetworkTableUtils.NTSubsystem.Interfaces.NetworkCommand;
 import lib.NetworkTableUtils.NormalPublishers.NTBoolean;
 import lib.SwerveLib.PathFinding.PoseFinder;
 import lib.SwerveLib.Utils.SwerveModuleStateSupplier;
@@ -59,7 +62,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
     );
 
     @RealDevice
-    private final AHRS navX = new AHRS(NavXComType.kMXP_SPI);
+    private final AHRS navX;
 
     private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleLocations());
 
@@ -86,13 +89,15 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
     private final NTBoolean connection = new NTBoolean("NetworkSwerve/IsSimulated");
 
     public Holonomic(){
-        super();
-        initializeSubsystemDevices();
+        super("NetworkSwerve");
+        initializeSubsystemDevices("NetworkSwerve/Devices/Holonomic");
 
         if (isInSimulation()) {
+            navX = null;
             translationPPgains = new PIDConstants(5.0, 0,0);
             rotationPPgains = new PIDConstants(5.0, 0,0);
         }else{
+            navX = new AHRS(NavXComType.kMXP_SPI);
             translationPPgains = new PIDConstants(5.5, 0, 0); 
             rotationPPgains = new PIDConstants(2.93, 0.0, 0.001);
         }
@@ -120,7 +125,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             this::runVelocity,
             this::getEstimatedPosition,
             this::setPose,
-            0.01,
+            0.02,
             this);
 
         if (!isInSimulation()) {
@@ -152,8 +157,9 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             ()-> modules[3].getModuleVelocity(),
             ()-> modules[3].getModuleRotation().getRadians());
 
-        SwerveWidget.build(
-            "NetworkSwerve/Elastic/SwerveWidget",
+        SwerveWidget.buildCustomPath(
+            "NetworkSwerve",
+            "Elastic/SwerveWidget",
             suppliers[0],
             suppliers[1],
             suppliers[2],
@@ -161,12 +167,12 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             ()-> getRotation().getRadians()
         );
 
-        SmartDashboard.putData("NetworkSwerve/PoseFinder", pathFinder);
+        NTPublisher.publish("NetworkSwerve", "PoseFinder/Info", pathFinder);
 
         connection.sendBoolean(isInSimulation());
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Modules/Locations")
+    @AutoNetworkPublisher(key = "Modules/Locations")
     private Translation2d[] getModuleLocations(){
         return new Translation2d[] {
             new Translation2d(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
@@ -292,9 +298,23 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         }
         kinematics.resetHeadings(headings);
         stop();
-      }
+    }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Modules/ModuleStates")
+    public void resetHeading(){
+        setPose(
+            new Pose2d(
+            getEstimatedPosition().getX(),
+            getEstimatedPosition().getY(),
+            new Rotation2d())
+        );
+    }
+
+    @NetworkCommand("Commands/ResetHeading")
+    public Command resetHeadingCommand(){
+        return Commands.runOnce(()-> resetHeading(), this);
+    }
+
+    @AutoNetworkPublisher(key = "Modules/ModuleStates")
     public SwerveModuleState[] getModuleStates() {
         SwerveModuleState[] states = new SwerveModuleState[4];
         for (int i = 0; i < 4; i++) {
@@ -303,7 +323,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         return states;
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Modules/ModulePositions")
+    @AutoNetworkPublisher(key = "Modules/ModulePositions")
     public SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] states = new SwerveModulePosition[4];
         for (int i = 0; i < 4; i++) {
@@ -312,7 +332,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         return states;
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Modules/ChassisSpeeds")
+    @AutoNetworkPublisher(key = "Modules/ChassisSpeeds")
     public ChassisSpeeds getChassisSpeeds(){
       return kinematics.toChassisSpeeds(getModuleStates());
     } 
@@ -321,12 +341,12 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Swerve/BotPose2D")
+    @AutoNetworkPublisher(key = "Odometry/BotPose2D")
     public Pose2d getEstimatedPosition() {
         return poseEstimator.getEstimatedPosition();
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Swerve/BotHeading")    
+    @AutoNetworkPublisher(key = "Odometry/BotHeading")    
     public Rotation2d getRotation(){
         return getEstimatedPosition().getRotation();
     }
@@ -335,13 +355,13 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         return pathFinder;
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Speeds/MaxLinear") 
+    @AutoNetworkPublisher(key = "Speeds/MaxLinear") 
     /** Returns the maximum linear speed in meters per sec. */
     public double getMaxLinearSpeedMetersPerSec() {
         return MAX_LINEAR_SPEED;
     }
 
-    @AutoNetworkPublisher(key = "NetworkSwerve/Speeds/MaxAngular")      
+    @AutoNetworkPublisher(key = "Speeds/MaxAngular")      
     /** Returns the maximum angular speed in radians per sec. */
     public double getMaxAngularSpeedRadPerSec() {
         return MAX_ANGULAR_SPEED;
