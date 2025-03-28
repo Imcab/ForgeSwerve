@@ -9,7 +9,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -19,6 +18,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import lib.Math.Constants.ProfileGains.PIDGains;
 import lib.Math.Constants.ProfileGains.SimpleFeedForwardGains;
+import lib.Math.Controllers.Control.PIDControl;
 import lib.Sim.RealDevice;
 import lib.Sim.SimulatedDevice;
 import lib.Sim.SimulatedSubsystem;
@@ -61,8 +61,8 @@ public class SwerveModule implements SimulatedSubsystem{
         LinearSystemId.createDCMotorSystem(NEOGearbox, 0.004, turnMotorReduction),
         NEOGearbox);
 
-    private final PIDController drivePID;
-    private final PIDController turnPID;
+    private final PIDControl drivePID;
+    private final PIDControl turnPID;
 
     private final SimpleFeedForwardGains driveFFGains;
     private final PIDGains drivePIDGains;
@@ -102,10 +102,10 @@ public class SwerveModule implements SimulatedSubsystem{
             this.driveFFGains = new SimpleFeedForwardGains(0, 0.0789, 0);
         }
 
-        drivePID = new PIDController(drivePIDGains.kP(), drivePIDGains.kI(), drivePIDGains.kD());
-        turnPID = new PIDController(turnPIDGains.kP(), turnPIDGains.kI(),turnPIDGains.kD());
+        drivePID = new PIDControl(drivePIDGains);
+        turnPID = new PIDControl(turnPIDGains);
 
-        turnPID.enableContinuousInput(-Math.PI, Math.PI);
+        turnPID.continuousInput(-Math.PI, Math.PI);
 
         initializeSubsystemDevices("NetworkSwerve/Devices/Modules");
 
@@ -116,10 +116,10 @@ public class SwerveModule implements SimulatedSubsystem{
         handleSubsystemRealityLoop();
 
         if (angleSetpoint != null) {
-            this.turnVoltage = turnPID.calculate(moduleAngle.getRadians());
+            this.turnVoltage = turnPID.calculate(moduleAngle.getRadians()).getOutput();
 
             if (speedSetpoint != null) {
-                this.driveVoltage = ffVolts + drivePID.calculate(driveVelocity);
+                this.driveVoltage = drivePID.calculate(driveVelocity).plus(()-> ffVolts).getOutput();
             }else{
                 drivePID.reset();
             }
