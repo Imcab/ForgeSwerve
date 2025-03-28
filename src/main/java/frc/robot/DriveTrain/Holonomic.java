@@ -25,8 +25,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import lib.Field.FieldObject;
 import lib.NetworkTableUtils.NTSubsystem.NetworkSubsystem;
-import lib.NetworkTableUtils.NTSubsystem.Interfaces.AutoNetworkPublisher;
-import lib.NetworkTableUtils.NTSubsystem.Interfaces.NetworkCommand;
+import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.AutoNetworkPublisher;
+import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.NetworkCommand;
 import lib.Sim.RealDevice;
 import lib.Sim.SimulatedSubsystem;
 import lib.SwerveLib.PathFinding.PoseFinder;
@@ -290,6 +290,20 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         }
     
     }
+
+    public void runCharacterization(double output) {
+        for (int i = 0; i < 4; i++) {
+          modules[i].runCharacterization(output);
+        }
+    }
+
+    public double getFFCharacterizationVelocity() {
+        double output = 0.0;
+        for (int i = 0; i < 4; i++) {
+          output += modules[i].getFFCharacterizationVelocity() / 4.0;
+        }
+        return output;
+      }
 
     public void stop(){
         runVelocity(new ChassisSpeeds());

@@ -17,8 +17,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import lib.Constants.ProfileGains.PIDGains;
-import lib.Constants.ProfileGains.SimpleFeedForwardGains;
+import lib.Math.Constants.ProfileGains.PIDGains;
+import lib.Math.Constants.ProfileGains.SimpleFeedForwardGains;
 import lib.Sim.RealDevice;
 import lib.Sim.SimulatedDevice;
 import lib.Sim.SimulatedSubsystem;
@@ -121,11 +121,10 @@ public class SwerveModule implements SimulatedSubsystem{
             if (speedSetpoint != null) {
                 this.driveVoltage = ffVolts + drivePID.calculate(driveVelocity);
             }else{
-                this.driveVoltage = 0;
                 drivePID.reset();
             }
         }else{
-            this.turnVoltage = 0;
+            turnPID.reset();
         }
     }
 
@@ -151,6 +150,10 @@ public class SwerveModule implements SimulatedSubsystem{
             Rotation2d.fromRotations(enc_turn.getPosition() / turnMotorReduction);
 
         this.driveVelocity = Units.rotationsPerMinuteToRadiansPerSecond(enc_drive.getVelocity());
+
+        driveSparkMax.setVoltage(driveVoltage);
+        turnSparkMax.setVoltage(turnVoltage);
+
     }
 
     public void setDriveVelocity(double velocity){
@@ -160,6 +163,16 @@ public class SwerveModule implements SimulatedSubsystem{
 
     public void setTurnPos(Rotation2d rot){
         turnPID.setSetpoint(rot.getRadians());
+    }
+
+    public void setDriveOpenLoop(double voltage){
+        this.speedSetpoint = null;
+        this.driveVoltage = voltage;
+    }
+
+    public void setTurnOpenLoop(double voltage){
+        this.angleSetpoint = null;
+        this.turnVoltage = voltage;
     }
 
     public double getDriveModuleVoltage(){
@@ -173,6 +186,10 @@ public class SwerveModule implements SimulatedSubsystem{
     public double getModuleVelocity(){
         return driveVelocity * WHEELRADIUS;
     }
+
+    public double getFFCharacterizationVelocity() {
+        return driveVelocity;
+      }
 
     public double getDrivePositionMeters(){
 
@@ -198,6 +215,11 @@ public class SwerveModule implements SimulatedSubsystem{
 
     }
 
+    public void runCharacterization(double output){
+        setDriveOpenLoop(output);
+        setTurnPos(new Rotation2d(0));
+    }
+
     public void toHome(){
         runSetpoint(new SwerveModuleState(0, new Rotation2d()));
     }
@@ -211,8 +233,8 @@ public class SwerveModule implements SimulatedSubsystem{
     }
 
     public void stopModule(){   
-        angleSetpoint = null;
-        speedSetpoint = null;
+        setTurnOpenLoop(0);
+        setDriveOpenLoop(0);
     }
 
     private void createSparks(int index){

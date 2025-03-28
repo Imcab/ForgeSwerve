@@ -2,6 +2,7 @@ package lib.NetworkTableUtils.NTSubsystem.Interfaces;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import lib.NetworkTableUtils.MultipleData.NTPublisher;
+import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.NetworkCommand;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

@@ -1,6 +1,8 @@
 package lib.NetworkTableUtils.NTSubsystem.Interfaces;
 
 import edu.wpi.first.networktables.*;
+import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.NetworkListener;
+
 import java.lang.reflect.Method;
 import java.util.EnumSet;
 import java.util.HashMap;

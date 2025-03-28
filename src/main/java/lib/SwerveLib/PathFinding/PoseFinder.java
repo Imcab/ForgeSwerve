@@ -71,19 +71,12 @@ public class PoseFinder implements Sendable{
         builder.addDoubleArrayProperty("Objective Pose",
         ()-> new double[]{goal.getX(), goal.getY(), goal.getRotation().getDegrees()}, null);
 
-        builder.addDoubleArrayProperty("CurrentPose",
-        ()->  new double[]{
-            currentHolonomicPose().getX(), currentHolonomicPose().getY(),
-            currentHolonomicPose().getRotation().getDegrees()}, null);
-
         builder.addBooleanProperty("PoseReached", ()-> atGoal(), null);
 
         builder.addDoubleProperty("PercentageTolerance", ()-> errorTolerance, null);
 
         builder.addBooleanProperty("IsSwervePathFinding", ()-> isPathFinding(), null);
-
-        builder.addStringProperty("Alliance", ()-> DriverStation.getAlliance().orElse(Alliance.Blue).name(), null);
-
+        
     }
 
     /**
@@ -158,9 +151,7 @@ public class PoseFinder implements Sendable{
 
     private Command toRawPose(Pose2d pose, PathConstraints pathVel){
 
-        Command pathFind = AutoBuilder.pathfindToPose(pose, pathVel);
-
-        pathFind.beforeStarting(()-> {
+        Command pathFind = AutoBuilder.pathfindToPose(pose, pathVel).beforeStarting(()-> {
 
         this.goal = pose;
         this.currentState = true;

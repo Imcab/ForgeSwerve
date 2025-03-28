@@ -1,4 +1,4 @@
-package lib.Constants;
+package lib.Math.Constants;
 
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -123,18 +123,17 @@ public class ProfileGains{
 
     public record MotionModelGains(
         double kP, double kI, double kD,
-        double kS, double kV, double kA, double kG,
         double maxAcceleration, double maxVelocity) implements Gains{
 
         @Override
         public double[] toArray(){
-            return new double[]{kP, kI,kD,kS,kV,kA,kG,maxAcceleration, maxVelocity};
+            return new double[]{kP, kI,kD,maxAcceleration, maxVelocity};
         }
 
         @Override
         public MotionModelGains fromArray(double[] array){
             return new MotionModelGains(
-                array[0], array[1], array[2], array[3], array[4], array[5], array[6], array[7], array[8]
+                array[0], array[1], array[2], array[3], array[4]
             );
         }
 
@@ -145,11 +144,6 @@ public class ProfileGains{
             builder.addDoubleProperty("slot0: P", () -> kP, null);
             builder.addDoubleProperty("slot1: I", () -> kI, null);
             builder.addDoubleProperty("slot2: D", () -> kD, null);
-
-            builder.addDoubleProperty("slot3: S", () -> kS, null);
-            builder.addDoubleProperty("slot4: V", () -> kV, null);
-            builder.addDoubleProperty("slot5: A", () -> kA, null);
-            builder.addDoubleProperty("slot6: G", () -> kG, null);
 
             builder.addDoubleProperty("slot7: maxAcceleration", () -> maxAcceleration, null);
             builder.addDoubleProperty("slot8: maxVelocity", () -> maxVelocity, null);
@@ -161,18 +155,17 @@ public class ProfileGains{
 
     public record MotionModelGainsExpo(
         double kP, double kI, double kD,
-        double kS, double kV, double kA, double kG,
         double maxAcceleration, double maxVelocity, double jerk) implements Gains{
 
         @Override
         public double[] toArray(){
-            return new double[]{kP, kI,kD,kS,kV,kA,kG,maxAcceleration, maxVelocity, jerk};
+            return new double[]{kP, kI,kD,maxAcceleration, maxVelocity, jerk};
         }
 
         @Override
         public MotionModelGainsExpo fromArray(double[] array){
             return new MotionModelGainsExpo(
-                array[0], array[1], array[2], array[3], array[4], array[5], array[6], array[7], array[8], array[9]
+                array[0], array[1], array[2], array[3], array[4], array[5]
             );
         }
 
@@ -183,11 +176,6 @@ public class ProfileGains{
             builder.addDoubleProperty("slot0: P", () -> kP, null);
             builder.addDoubleProperty("slot1: I", () -> kI, null);
             builder.addDoubleProperty("slot2: D", () -> kD, null);
-
-            builder.addDoubleProperty("slot3: S", () -> kS, null);
-            builder.addDoubleProperty("slot4: V", () -> kV, null);
-            builder.addDoubleProperty("slot5: A", () -> kA, null);
-            builder.addDoubleProperty("slot6: G", () -> kG, null);
 
             builder.addDoubleProperty("slot7: maxAcceleration", () -> maxAcceleration, null);
             builder.addDoubleProperty("slot8: maxVelocity", () -> maxVelocity, null);

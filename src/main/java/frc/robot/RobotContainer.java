@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.DriveCommands.DriveCommands;
 import frc.robot.DriveTrain.Holonomic;
 import frc.robot.DriveTrain.Holonomic.SwervePathConstraints;
+import lib.NetworkTableUtils.MultipleData.NTPublisher;
+import lib.NetworkTableUtils.SpecialPublishers.NTJoystick;
 
 public class RobotContainer {
 
@@ -21,10 +23,20 @@ public class RobotContainer {
 
   public RobotContainer() {
     chassis = new Holonomic(SwervePathConstraints.kNormal);
+    
+    NTPublisher.publish("NTControllers", "Driver1", NTJoystick.from(driver));
     configureBindings();
   }
 
   private void configureBindings() {
+    
+    driver.circle().whileTrue(
+      DriveCommands.joystickSnapAngle(
+        chassis,
+        ()-> -driver.getLeftY(),
+        ()-> -driver.getLeftX(),
+        ()-> Rotation2d.fromDegrees(0)));
+    
     driver.cross().whileTrue(chassis.getPathFinder().toPoseCommand(new Pose2d(2.5, 2.5, Rotation2d.kZero)));
     chassis.setDefaultCommand(DriveCommands.joystickDrive(chassis, ()-> -driver.getLeftY(), ()-> -driver.getLeftX(), ()-> -driver.getRightX()));
   }

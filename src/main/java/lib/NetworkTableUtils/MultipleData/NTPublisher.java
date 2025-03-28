@@ -2,6 +2,7 @@ package lib.NetworkTableUtils.MultipleData;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -16,6 +17,10 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructArrayPublisher;
+import edu.wpi.first.networktables.StructArraySubscriber;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
@@ -65,8 +70,81 @@ public class NTPublisher{
    
     private static final Map<String, Sendable> sendables = new HashMap<>();
 
+
+    //Publishers
+    private static final ConcurrentHashMap<String, StructPublisher<Translation2d>> t2 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<Translation2d>> at2 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Translation3d>> t3 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<Translation3d>> at3 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Transform2d>> tf2 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<Transform2d>> atf2 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Transform3d>> tf3 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<Transform3d>> atf3 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Pose2d>> p2 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArrayPublisher<Pose2d>> ap2 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Pose3d>> p3 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArrayPublisher<Pose3d>> ap3 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Rotation2d>> r2 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<Rotation2d>> ar2 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<Rotation3d>> r3 = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<Rotation3d>> ar3 = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<ChassisSpeeds>> cS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<ChassisSpeeds>> acS = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<SwerveModuleState>> State = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<SwerveModuleState>> aState = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructPublisher<SwerveModulePosition>> Pos = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String,StructArrayPublisher<SwerveModulePosition>> aPos = new ConcurrentHashMap<>();
+
+    //Subscribers
+    private static final ConcurrentHashMap<String, StructSubscriber<Translation2d>> t2P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Translation2d>> at2P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Translation3d>> t3P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Translation3d>> at3P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Transform2d>> tf2P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Transform2d>> atf2P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Transform3d>> tf3P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Transform3d>> atf3P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Pose2d>> p2P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Pose2d>> ap2P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Pose3d>> p3P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Pose3d>> ap3P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Rotation2d>> r2P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Rotation2d>> ar2P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<Rotation3d>> r3P = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<Rotation3d>> ar3P = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<ChassisSpeeds>> cSP = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<ChassisSpeeds>> acSP = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<SwerveModuleState>> StateP = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<SwerveModuleState>> aStateP = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, StructSubscriber<SwerveModulePosition>> PosP = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, StructArraySubscriber<SwerveModulePosition>> aPosP = new ConcurrentHashMap<>();
+
     private NTPublisher(){
         throw new UnsupportedOperationException("This is an Utility class");
+    }
+
+    public static String fullPathOf(String table, String key){
+        return table + "/" + key;
     }
 
     /**
@@ -143,7 +221,13 @@ public class NTPublisher{
      * @param value     The {@link ChassisSpeeds} object to publish.
      */
     public static void publish(String tableName, String key, ChassisSpeeds value){
-        ntInstance.getTable(tableName).getStructTopic(key, ChassisSpeeds.struct).publish().set(value);
+        
+        StructPublisher<ChassisSpeeds> subscriber = cS.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, ChassisSpeeds.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -154,7 +238,13 @@ public class NTPublisher{
      * @param value     The {@link ChassisSpeeds} to publish.
      */
     public static void publish(String tableName, String key, ChassisSpeeds[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, ChassisSpeeds.struct).publish().set(value);
+        
+        StructArrayPublisher<ChassisSpeeds> subscriber = acS.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, ChassisSpeeds.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -165,7 +255,13 @@ public class NTPublisher{
      * @param value     The {@link Pose2d} object to publish.
      */
     public static void publish(String tableName, String key, Pose2d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Pose2d.struct).publish().set(value);
+        
+        StructPublisher<Pose2d> subscriber = p2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Pose2d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -176,7 +272,12 @@ public class NTPublisher{
      * @param value     The {@link Pose2d} to publish.
      */
     public static void publish(String tableName, String key, Pose2d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Pose2d.struct).publish().set(value);
+
+        StructArrayPublisher<Pose2d> subscriber = ap2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Pose2d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
 
@@ -188,7 +289,12 @@ public class NTPublisher{
      * @param value     The {@link Pose3d} object to publish.
      */
     public static void publish(String tableName, String key, Pose3d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Pose3d.struct).publish().set(value);
+        
+        StructPublisher<Pose3d> subscriber = p3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Pose3d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
     /**
@@ -199,7 +305,13 @@ public class NTPublisher{
      * @param value     The {@link Pose3d} to publish.
      */
     public static void publish(String tableName, String key, Pose3d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Pose3d.struct).publish().set(value);
+        
+        StructArrayPublisher<Pose3d> subscriber = ap3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Pose3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -210,7 +322,12 @@ public class NTPublisher{
      * @param value     The {@link Rotation2d} object to publish.
      */
     public static void publish(String tableName, String key, Rotation2d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Rotation2d.struct).publish().set(value);
+
+        StructPublisher<Rotation2d> subscriber = r2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Rotation2d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
     /**
@@ -221,7 +338,12 @@ public class NTPublisher{
      * @param value     The {@link Rotation2d} to publish.
      */
     public static void publish(String tableName, String key, Rotation2d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Rotation2d.struct).publish().set(value);
+
+        StructArrayPublisher<Rotation2d> subscriber = ar2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Rotation2d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
     /**
@@ -232,7 +354,13 @@ public class NTPublisher{
      * @param value     The {@link Rotation3d} object to publish.
      */
     public static void publish(String tableName, String key, Rotation3d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Rotation3d.struct).publish().set(value);
+        
+        StructPublisher<Rotation3d> subscriber = r3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Rotation3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -243,7 +371,13 @@ public class NTPublisher{
      * @param value     The {@link Rotation3d} to publish.
      */
     public static void publish(String tableName, String key, Rotation3d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Rotation3d.struct).publish().set(value);
+        
+        StructArrayPublisher<Rotation3d> subscriber = ar3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Rotation3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -254,7 +388,12 @@ public class NTPublisher{
      * @param value     The {@link Transform2d} object to publish.
      */
     public static void publish(String tableName, String key, Transform2d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Transform2d.struct).publish().set(value);
+        
+        StructPublisher<Transform2d> subscriber = tf2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Transform2d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
     /**
@@ -265,7 +404,12 @@ public class NTPublisher{
      * @param value     The {@link Transform2d} to publish.
      */
     public static void publish(String tableName, String key, Transform2d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Transform2d.struct).publish().set(value);
+        
+        StructArrayPublisher<Transform2d> subscriber = atf2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Transform2d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
     /**
@@ -276,7 +420,13 @@ public class NTPublisher{
      * @param value     The {@link Transform3d} object to publish.
      */
     public static void publish(String tableName, String key, Transform3d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Transform3d.struct).publish().set(value);
+        
+        StructPublisher<Transform3d> subscriber = tf3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Transform3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -287,7 +437,13 @@ public class NTPublisher{
      * @param value     The {@link Transform3d} to publish.
      */
     public static void publish(String tableName, String key, Transform3d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Transform3d.struct).publish().set(value);
+        
+        StructArrayPublisher<Transform3d> subscriber = atf3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Transform3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -298,7 +454,12 @@ public class NTPublisher{
      * @param value     The {@link Translation2d} object to publish.
      */
     public static void publish(String tableName, String key, Translation2d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Translation2d.struct).publish().set(value);
+        
+        StructPublisher<Translation2d> subscriber = t2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Translation2d.struct).publish()
+        );
+
+        subscriber.set(value);
     }
 
     /**
@@ -309,7 +470,13 @@ public class NTPublisher{
      * @param value     The {@link Translation2d} to publish.
      */
     public static void publish(String tableName, String key, Translation2d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Translation2d.struct).publish().set(value);
+        
+        StructArrayPublisher<Translation2d> subscriber = at2.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Translation2d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -320,7 +487,13 @@ public class NTPublisher{
      * @param value     The {@link Translation3d} object to publish.
      */
     public static void publish(String tableName, String key, Translation3d value){
-        ntInstance.getTable(tableName).getStructTopic(key, Translation3d.struct).publish().set(value);
+        
+        StructPublisher<Translation3d> subscriber = t3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, Translation3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -331,7 +504,13 @@ public class NTPublisher{
      * @param value     The {@link Translation3d} to publish.
      */
     public static void publish(String tableName, String key, Translation3d[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, Translation3d.struct).publish().set(value);
+        
+        StructArrayPublisher<Translation3d> subscriber = at3.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, Translation3d.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -342,7 +521,13 @@ public class NTPublisher{
      * @param value     The {@link SwerveModuleState} object to publish.
      */
     public static void publish(String tableName, String key, SwerveModuleState value){
-        ntInstance.getTable(tableName).getStructTopic(key, SwerveModuleState.struct).publish().set(value);
+        
+        StructPublisher<SwerveModuleState> subscriber = State.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, SwerveModuleState.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -353,7 +538,12 @@ public class NTPublisher{
      * @param value     The {@link SwerveModuleState} to publish.
      */
     public static void publish(String tableName, String key, SwerveModuleState[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, SwerveModuleState.struct).publish().set(value);
+
+        StructArrayPublisher<SwerveModuleState> subscriber = aState.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, SwerveModuleState.struct).publish()
+        );
+
+        subscriber.set(value);       
     }
 
     /**
@@ -364,7 +554,13 @@ public class NTPublisher{
      * @param value     The {@link SwerveModulePosition} object to publish.
      */
     public static void publish(String tableName, String key, SwerveModulePosition value){
-        ntInstance.getTable(tableName).getStructTopic(key, SwerveModulePosition.struct).publish().set(value);
+        
+        StructPublisher<SwerveModulePosition> subscriber = Pos.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructTopic(key, SwerveModulePosition.struct).publish()
+        );
+
+        subscriber.set(value);
+
     }
 
     /**
@@ -375,7 +571,13 @@ public class NTPublisher{
      * @param value     The {@link SwerveModulePosition} to publish.
      */
     public static void publish(String tableName, String key, SwerveModulePosition[] value){
-        ntInstance.getTable(tableName).getStructArrayTopic(key, SwerveModulePosition.struct).publish().set(value);
+        
+        StructArrayPublisher<SwerveModulePosition> subscriber = aPos.computeIfAbsent(fullPathOf(tableName, key), k ->
+            ntInstance.getTable(tableName).getStructArrayTopic(key, SwerveModulePosition.struct).publish()
+        );
+
+        subscriber.set(value); 
+
     }
 
     /**
@@ -428,6 +630,7 @@ public class NTPublisher{
      * @return The retrieved double value.
      */
     public static double retrieve(String TableName, String key, double defaultValue){
+
         return ntInstance.getTable(TableName).getEntry(key).getDouble(defaultValue);
     }
 
@@ -500,7 +703,12 @@ public class NTPublisher{
      * @return The retrieved {@link Pose2d} object.
      */
     public static Pose2d retrieve(String TableName, String key, Pose2d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Pose2d.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<Pose2d> subscriber = p2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Pose2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -512,7 +720,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Pose2d} objects.
      */
     public static Pose2d[] retrieve(String TableName, String key, Pose2d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Pose2d.struct).getEntry(defaultValue).get();
+
+        StructArraySubscriber<Pose2d> subscriber = ap2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Pose2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -524,7 +737,12 @@ public class NTPublisher{
      * @return The retrieved {@link Pose3d} object.
      */
     public static Pose3d retrieve(String TableName, String key, Pose3d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Pose3d.struct).getEntry(defaultValue).get();
+    
+        StructSubscriber<Pose3d> subscriber = p3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Pose3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -536,7 +754,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Pose3d} objects.
      */
     public static Pose3d[] retrieve(String TableName, String key, Pose3d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Pose3d.struct).getEntry(defaultValue).get();
+
+        StructArraySubscriber<Pose3d> subscriber = ap3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Pose3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -548,7 +771,12 @@ public class NTPublisher{
      * @return The retrieved {@link Translation2d} object.
      */
     public static Translation2d retrieve(String TableName, String key, Translation2d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Translation2d.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<Translation2d> subscriber = t2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Translation2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -560,7 +788,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Translation2d} objects.
      */
     public static Translation2d[] retrieve(String TableName, String key, Translation2d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Translation2d.struct).getEntry(defaultValue).get();
+        
+        StructArraySubscriber<Translation2d> subscriber = at2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Translation2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -572,7 +805,12 @@ public class NTPublisher{
      * @return The retrieved {@link Translation3d} object.
      */
     public static Translation3d retrieve(String TableName, String key, Translation3d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Translation3d.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<Translation3d> subscriber = t3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Translation3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -584,7 +822,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Translation3d} objects.
      */
     public static Translation3d[] retrieve(String TableName, String key, Translation3d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Translation3d.struct).getEntry(defaultValue).get();
+
+        StructArraySubscriber<Translation3d> subscriber = at3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Translation3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -596,7 +839,12 @@ public class NTPublisher{
      * @return The retrieved {@link Transform2d} object.
      */
     public static Transform2d retrieve(String TableName, String key, Transform2d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Transform2d.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<Transform2d> subscriber = tf2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Transform2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -608,7 +856,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Transform2d} objects.
      */
     public static Transform2d[] retrieve(String TableName, String key, Transform2d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Transform2d.struct).getEntry(defaultValue).get();
+        
+        StructArraySubscriber<Transform2d> subscriber = atf2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Transform2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -620,7 +873,12 @@ public class NTPublisher{
      * @return The retrieved {@link Transform3d} object.
      */
     public static Transform3d retrieve(String TableName, String key, Transform3d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Transform3d.struct).getEntry(defaultValue).get();
+        
+        StructSubscriber<Transform3d> subscriber = tf3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Transform3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -632,7 +890,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Transform3d} objects.
      */
     public static Transform3d[] retrieve(String TableName, String key, Transform3d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Transform3d.struct).getEntry(defaultValue).get();
+        
+        StructArraySubscriber<Transform3d> subscriber = atf3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Transform3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -644,7 +907,12 @@ public class NTPublisher{
      * @return The retrieved {@link Rotation2d} object.
      */
     public static Rotation2d retrieve(String TableName, String key, Rotation2d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Rotation2d.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<Rotation2d> subscriber = r2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Rotation2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -656,7 +924,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link Rotation2d} objects.
      */
     public static Rotation2d[] retrieve(String TableName, String key, Rotation2d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Rotation2d.struct).getEntry(defaultValue).get();
+
+        StructArraySubscriber<Rotation2d> subscriber = ar2P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Rotation2d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -668,7 +941,13 @@ public class NTPublisher{
      * @return The retrieved {@link Rotation3d} object.
      */
     public static Rotation3d retrieve(String TableName, String key, Rotation3d defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, Rotation3d.struct).getEntry(defaultValue).get();
+        
+        StructSubscriber<Rotation3d> subscriber = r3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, Rotation3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
+
     }
 
     /**
@@ -680,7 +959,13 @@ public class NTPublisher{
      * @return The retrieved array of {@link Rotation3d} objects.
      */
     public static Rotation3d[] retrieve(String TableName, String key, Rotation3d[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, Rotation3d.struct).getEntry(defaultValue).get();
+        
+        StructArraySubscriber<Rotation3d> subscriber = ar3P.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, Rotation3d.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
+
     }
 
     /**
@@ -692,7 +977,12 @@ public class NTPublisher{
      * @return The retrieved {@link ChassisSpeeds} object.
      */
     public static ChassisSpeeds retrieve(String TableName, String key, ChassisSpeeds defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, ChassisSpeeds.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<ChassisSpeeds> subscriber = cSP.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, ChassisSpeeds.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -704,7 +994,12 @@ public class NTPublisher{
      * @return The retrieved array of {@link ChassisSpeeds} objects.
      */
     public static ChassisSpeeds[] retrieve(String TableName, String key, ChassisSpeeds[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, ChassisSpeeds.struct).getEntry(defaultValue).get();
+
+        StructArraySubscriber<ChassisSpeeds> subscriber = acSP.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, ChassisSpeeds.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -716,7 +1011,13 @@ public class NTPublisher{
      * @return The retrieved {@link SwerveModuleState} object.
      */
     public static SwerveModuleState retrieve(String TableName, String key, SwerveModuleState defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, SwerveModuleState.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<SwerveModuleState> subscriber = StateP.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, SwerveModuleState.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
+
     }
 
     /**
@@ -728,7 +1029,13 @@ public class NTPublisher{
      * @return The retrieved array of {@link SwerveModuleState} objects.
      */
     public static SwerveModuleState[] retrieve(String TableName, String key, SwerveModuleState[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, SwerveModuleState.struct).getEntry(defaultValue).get();
+        
+        StructArraySubscriber<SwerveModuleState> subscriber = aStateP.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, SwerveModuleState.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
+
     }
 
     /**
@@ -740,7 +1047,12 @@ public class NTPublisher{
      * @return The retrieved {@link SwerveModulePosition} object.
      */
     public static SwerveModulePosition retrieve(String TableName, String key, SwerveModulePosition defaultValue){
-        return ntInstance.getTable(TableName).getStructTopic(key, SwerveModulePosition.struct).getEntry(defaultValue).get();
+
+        StructSubscriber<SwerveModulePosition> subscriber = PosP.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructTopic(key, SwerveModulePosition.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
     }
 
     /**
@@ -752,7 +1064,13 @@ public class NTPublisher{
      * @return The retrieved array of {@link SwerveModulePosition} objects.
      */
     public static SwerveModulePosition[] retrieve(String TableName, String key, SwerveModulePosition[] defaultValue){
-        return ntInstance.getTable(TableName).getStructArrayTopic(key, SwerveModulePosition.struct).getEntry(defaultValue).get();
+        
+        StructArraySubscriber<SwerveModulePosition> subscriber = aPosP.computeIfAbsent(fullPathOf(TableName, key), k ->
+            ntInstance.getTable(TableName).getStructArrayTopic(key, SwerveModulePosition.struct).subscribe(defaultValue)
+        );
+
+        return subscriber.get();
+
     }
 
     /**

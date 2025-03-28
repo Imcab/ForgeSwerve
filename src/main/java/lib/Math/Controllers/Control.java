@@ -1,0 +1,389 @@
+package lib.Math.Controllers;
+
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import lib.Math.Operator;
+import lib.Math.Constants.ProfileGains.CompleteFeedForwardGains;
+import lib.Math.Constants.ProfileGains.MotionModelGains;
+import lib.Math.Constants.ProfileGains.MotionModelGainsExpo;
+import lib.Math.Constants.ProfileGains.PIDGains;
+import lib.Math.Constants.ProfileGains.SimpleFeedForwardGains;
+
+public class Control {
+ 
+    @FunctionalInterface
+    public interface ControlResult{
+        double getOutput();
+
+        default ControlResult plus(ControlResult other){
+            return ()-> getOutput() + other.getOutput();
+        }
+
+        default ControlResult minus(ControlResult other){
+            return ()-> getOutput() - other.getOutput();
+        }
+
+        default ControlResult clamp(double min, double max){
+            return ()-> Math.max(Math.min(getOutput(), max), min);
+        }
+
+        default ControlResult negate(){
+            return ()-> -getOutput();
+        }
+
+        default ControlResult times(double scalar){
+            return ()-> getOutput() * scalar;
+        }
+
+        default ControlResult divide(double scalar){
+            return ()-> getOutput() / scalar;
+        }
+
+        default ControlResult withOperation(Operator.UnaryOperation operation){
+            return ()-> operation.apply(getOutput());
+        }
+
+        default ControlResult withOperation(Operator.Operation operation, double b){
+            return ()-> operation.apply(getOutput(), b);
+        }
+
+        default ControlResult withDeadband(double threshold) {
+            return () -> Math.abs(getOutput()) > threshold ? getOutput() : 0.0;
+        }
+
+        default ControlResult delete(){
+            return ()-> 0.0;
+        }
+
+    }
+
+    public static abstract class ControlBase<S, M>{
+
+        public abstract ControlResult calculate(S setpoint, M measurement);
+
+        public abstract ControlResult calculate(M measurement);
+
+        public abstract S getSetpoint();
+
+        public abstract void setSetpoint(S setpoint);
+    
+    }
+
+    public static class FeedForwardControl{
+
+        public static ControlResult calculate(SimpleFeedForwardGains gains, double velocity, double acceleration){
+            return ()-> 
+            Math.signum(velocity) * gains.kS() +
+            gains.kV() * velocity +
+            gains.kA() * acceleration;
+        }
+
+        public static ControlResult calculate(CompleteFeedForwardGains gains, double velocity, double acceleration){
+            return ()-> 
+            Math.signum(velocity) * gains.kS() +
+            gains.kG() +
+            gains.kV() * velocity +
+            gains.kA() * acceleration;
+        }
+
+    }
+
+    public static class PIDControl extends Control.ControlBase<Double, Double>{
+
+        private PIDGains gains;
+        private final PIDController controller;
+
+        public PIDControl(PIDGains gains){
+            this.gains = gains;
+            controller = new PIDController(gains.kP(), gains.kI(), gains.kD());
+
+        }
+
+        public PIDControl(PIDGains gains, double period){
+            this.gains = gains;
+            controller = new PIDController(gains.kP(), gains.kI(), gains.kD(), period);
+        }
+
+        public void setGains(PIDGains gains){
+            this.gains = gains;
+            controller.setP(gains.kP());
+            controller.setI(gains.kI());
+            controller.setD(gains.kD());
+        }
+
+        public PIDGains getGains(){
+            return gains;
+        }
+
+        @Override
+        public ControlResult calculate(Double setpoint, Double measurement){
+            return ()-> controller.calculate(setpoint, measurement);
+        }
+
+        @Override
+        public ControlResult calculate(Double measurement){
+            return ()-> controller.calculate(measurement);
+        }
+
+        @Override
+        public Double getSetpoint(){
+            return controller.getSetpoint();
+        }
+
+        @Override
+        public void setSetpoint(Double setpoint){
+            controller.setSetpoint(setpoint);
+        }
+
+        public void disableContinuousInput(){
+            controller.disableContinuousInput();
+        }
+
+        public void continuousInput(double minInput, double maxInput){
+            controller.enableContinuousInput(minInput, maxInput);
+        }
+
+        public void setTolerance(double tolerance){
+            controller.setTolerance(tolerance);
+        }
+
+        public PIDController getController(){
+            return controller;
+        }
+
+        public void reset(){
+            controller.reset();
+        }
+
+    }
+
+    public static class PositionState extends TrapezoidProfile.State {
+
+        public PositionState(double position) {
+            super(position, 0);
+        }
+        
+    }
+
+    public static class MotionModelControl extends Control.ControlBase<TrapezoidProfile.State, Double>{
+
+        private final ProfiledPIDController controller;
+        private MotionModelGains gains;
+
+        public MotionModelControl(MotionModelGains gains) {
+
+            this.gains = gains;
+        
+            this.controller = new ProfiledPIDController(
+                gains.kP(), gains.kI(), gains.kD(),
+                new TrapezoidProfile.Constraints(
+                    gains.maxVelocity(), gains.maxAcceleration()));
+        }
+
+        public void setGains(MotionModelGains gains){
+            controller.setP(gains.kP());
+            controller.setI(gains.kI());
+            controller.setD(gains.kD());
+            controller.setConstraints(new TrapezoidProfile.Constraints(gains.maxVelocity(), gains.maxAcceleration()));
+        }
+
+        public MotionModelGains getGains(){
+            return gains;
+        }
+
+        @Override
+        public ControlResult calculate(TrapezoidProfile.State setpoint, Double measurement) {
+            return ()-> controller.calculate(measurement, setpoint);
+        }
+
+        @Override
+        public ControlResult calculate(Double measurement) {
+            return ()-> controller.calculate(measurement);
+        }
+
+        @Override
+        public TrapezoidProfile.State getSetpoint() {
+            return controller.getSetpoint();
+        }
+
+        @Override
+        public void setSetpoint(TrapezoidProfile.State setpoint) {
+            controller.setGoal(setpoint);
+        }
+
+        public void disableContinuousInput(){
+            controller.disableContinuousInput();
+        }
+
+        public void continuousInput(double minInput, double maxInput){
+            controller.enableContinuousInput(minInput, maxInput);
+        }
+
+        public void setTolerance(double tolerance, double velocityTolerance){
+            controller.setTolerance(tolerance, velocityTolerance);
+        }
+
+        public ProfiledPIDController getController() {
+            return controller;
+        }
+
+        public void reset(double position, double velocity){
+            controller.reset(position, velocity);
+        }
+
+    }
+
+    public static class MotionModelExpoControl extends Control.ControlBase<TrapezoidProfile.State, Double>{
+
+        public static final double DEFAULT_PERIOD = 0.02;
+
+        private final ProfiledPIDController controller;
+        private MotionModelGainsExpo gains;
+        private double jerk;
+
+        private double lastAcceleration = 0.0;
+        private double lastVelocity = 0.0;
+        private double dt;
+
+        public MotionModelExpoControl(MotionModelGainsExpo gains, double period) {
+
+            this.gains = gains;
+            this.dt = period;
+
+            this.controller = new ProfiledPIDController(
+                gains.kP(), gains.kI(), gains.kD(),
+                new TrapezoidProfile.Constraints(
+                    gains.maxVelocity(), gains.maxAcceleration()), dt);
+            this.jerk = gains.jerk();
+        }
+
+        public void setGains(MotionModelGainsExpo gains){
+            controller.setP(gains.kP());
+            controller.setI(gains.kI());
+            controller.setD(gains.kD());
+            controller.setConstraints(new TrapezoidProfile.Constraints(gains.maxVelocity(), gains.maxAcceleration()));
+            this.jerk = gains.jerk();
+        }
+
+        public MotionModelGainsExpo getGains(){
+            return gains;
+        }
+
+        private double applySCurve(double desiredAcceleration){
+            double deltaAcceleration = desiredAcceleration - lastAcceleration;
+            double limitedDelta = Math.max(-jerk * dt, Math.min(jerk * dt, deltaAcceleration));
+            lastAcceleration += limitedDelta;
+            return lastAcceleration;
+        }
+
+        @Override
+        public ControlResult calculate(TrapezoidProfile.State setpoint, Double measurement) {
+            return ()-> {
+                double velocity = controller.calculate(measurement, setpoint);
+                double acceleration = (velocity - lastVelocity) / dt;
+                double limitedAcceleration = applySCurve(acceleration);
+                lastVelocity = velocity;
+
+                return limitedAcceleration;
+            };
+        }
+
+        @Override
+        public ControlResult calculate(Double measurement) {
+            return ()-> {
+                double velocity = controller.calculate(measurement);
+                double acceleration = (velocity - lastVelocity) / dt;
+                double limitedAcceleration = applySCurve(acceleration);
+                lastVelocity = velocity;
+                return limitedAcceleration;
+            };
+        }
+
+        @Override
+        public TrapezoidProfile.State getSetpoint() {
+            return controller.getSetpoint();
+        }
+
+        @Override
+        public void setSetpoint(TrapezoidProfile.State setpoint) {
+            controller.setGoal(setpoint);
+        }
+
+        public void disableContinuousInput(){
+            controller.disableContinuousInput();
+        }
+
+        public void continuousInput(double minInput, double maxInput){
+            controller.enableContinuousInput(minInput, maxInput);
+        }
+
+        public void setTolerance(double tolerance, double velocityTolerance){
+            controller.setTolerance(tolerance, velocityTolerance);
+        }
+
+        public ProfiledPIDController getController() {
+            return controller;
+        }
+
+        public void reset(double position, double velocity){
+            controller.reset(position, velocity);
+            lastVelocity = velocity;
+            lastAcceleration = 0.0;
+        }
+
+    }
+
+    public static class CascadeControl extends Control.ControlBase<Double,Double>{
+
+        private final PIDControl outerLoop;
+        private final PIDControl innerLoop;
+        private double setpoint;
+
+        public CascadeControl(PIDControl outerLoop, PIDControl innerLoop) {
+            this.outerLoop = outerLoop;
+            this.innerLoop = innerLoop;
+        }
+
+        @Override
+        public ControlResult calculate(Double setpoint, Double measurement) {
+            this.setpoint = setpoint;
+
+            var intermediateSetpoint = outerLoop.calculate(setpoint, measurement).getOutput();
+      
+            return innerLoop.calculate(intermediateSetpoint, measurement);
+        }
+
+        @Override
+        public ControlResult calculate(Double measurement) {
+            var intermediateSetpoint = outerLoop.calculate(setpoint, measurement).getOutput();
+      
+            return innerLoop.calculate(intermediateSetpoint, measurement);
+        }
+
+        @Override
+        public Double getSetpoint() {
+            return setpoint;
+        }
+
+        @Override
+        public void setSetpoint(Double setpoint) {
+            this.setpoint = setpoint;
+        }
+
+        public PIDControl getOuterLoop() {
+            return outerLoop;
+        }
+
+        public PIDControl getInnerLoop() {
+            return innerLoop;
+        }
+
+        public void reset(){
+            outerLoop.reset();
+            innerLoop.reset();
+        }
+      
+    }
+
+}

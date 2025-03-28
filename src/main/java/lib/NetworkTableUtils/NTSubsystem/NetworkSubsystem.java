@@ -12,10 +12,9 @@ import java.util.function.Supplier;
 
 import lib.NetworkTableUtils.MultipleData.NTPublisher;
 import lib.NetworkTableUtils.NTSubsystem.Interfaces.*;
-import lib.NetworkTableUtils.NormalPublishers.*;
-import lib.NetworkTableUtils.SupplierPublishers.*;
+import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.AutoNetworkPublisher;
 
-public abstract class NetworkSubsystem extends SubsystemBase {
+public abstract class NetworkSubsystem extends SubsystemBase{
 
     private static final Set<Runnable> registeredPublishers = new HashSet<>();
     private final String tableName;
@@ -61,79 +60,67 @@ public abstract class NetworkSubsystem extends SubsystemBase {
     
             try {
                 if (returnType == Pose2d.class) {
-                    NTData<Pose2d> ntData = new NTData<>(tableName,key, Pose2d.struct);
-                    registerPublisher(() -> ntData.sendData((Pose2d) supplier.get()));
+            
+                   registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Pose2d) supplier.get()));
 
                 } else if (returnType == Pose2d[].class) {
-                    NTArrayData<Pose2d> ntData = new NTArrayData<>(tableName,key, Pose2d.struct);
-                    registerPublisher(() -> ntData.sendData((Pose2d[]) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Pose2d[]) supplier.get()));
 
                 } else if (returnType == Pose3d.class) {
-                    NTData<Pose3d> ntData = new NTData<>(tableName,key, Pose3d.struct);
-                    registerPublisher(() -> ntData.sendData((Pose3d) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Pose3d) supplier.get()));
 
                 } else if (returnType == Pose3d[].class) {
-                    NTArrayData<Pose3d> ntData = new NTArrayData<>(tableName,key, Pose3d.struct);
-                    registerPublisher(() -> ntData.sendData((Pose3d[]) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Pose3d[]) supplier.get()));
 
                 } else if (returnType == Rotation2d.class) {
-                    NTData<Rotation2d> ntData = new NTData<>(tableName,key, Rotation2d.struct);
-                    registerPublisher(() -> ntData.sendData((Rotation2d) supplier.get()));
+                    
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Rotation2d) supplier.get()));
 
                 } else if (returnType == Rotation2d[].class) {
-                    NTArrayData<Rotation2d> ntData = new NTArrayData<>(tableName,key, Rotation2d.struct);
-                    registerPublisher(() -> ntData.sendData((Rotation2d[]) supplier.get()));
+    
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Rotation2d[]) supplier.get()));
                 
                 } else if (returnType == Rotation3d.class) {
-                    NTData<Rotation3d> ntData = new NTData<>(tableName,key, Rotation3d.struct);
-                    registerPublisher(() -> ntData.sendData((Rotation3d) supplier.get()));
+           
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Rotation3d) supplier.get()));
 
                 } else if (returnType == Translation2d.class) {
-                    NTData<Translation2d> ntData = new NTData<>(tableName,key, Translation2d.struct);
-                    registerPublisher(() -> ntData.sendData((Translation2d) supplier.get()));
+
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Translation2d) supplier.get()));
 
                 }else if(returnType == Translation2d[].class){
-                    NTArrayData<Translation2d> ntData = new NTArrayData<>(tableName,key, Translation2d.struct);
-                    registerPublisher(()-> ntData.sendData((Translation2d[]) supplier.get()));
-
+                    
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Translation2d[]) supplier.get()));
                 }
                 else if (returnType == Translation3d.class) {
-                    NTData<Translation3d> ntData = new NTData<>(tableName,key, Translation3d.struct);
-                    registerPublisher(() -> ntData.sendData((Translation3d) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Translation3d) supplier.get()));
 
                 }
                 else if(returnType == Translation3d[].class){
-                NTArrayData<Translation3d> ntData = new NTArrayData<>(tableName,key, Translation3d.struct);
-                registerPublisher(()-> ntData.sendData((Translation3d[]) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (Translation3d[]) supplier.get()));
 
                 }
                 else if (returnType == ChassisSpeeds.class) {
-                    NTData<ChassisSpeeds> ntData = new NTData<>(tableName,key, ChassisSpeeds.struct);
-                    registerPublisher(() -> ntData.sendData((ChassisSpeeds) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (ChassisSpeeds) supplier.get()));
 
                 } else if (returnType == SwerveModuleState[].class) {
-                    NTArrayData<SwerveModuleState> ntData = new NTArrayData<>(tableName,key, SwerveModuleState.struct);
-                    registerPublisher(() -> ntData.sendData((SwerveModuleState[]) supplier.get()));
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (SwerveModuleState[]) supplier.get()));
 
                 } else if (returnType == SwerveModulePosition[].class) {
-                    NTArrayData<SwerveModulePosition> ntData = new NTArrayData<>(tableName,key, SwerveModulePosition.struct);
-                    registerPublisher(() -> ntData.sendData((SwerveModulePosition[]) supplier.get()));
+
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (SwerveModulePosition[]) supplier.get()));
 
                 } else if (returnType == double[].class || returnType == Double[].class) {
-                    NTSupplierDoubleArray ntData = new NTSupplierDoubleArray(tableName,key, () -> (double[]) supplier.get());
-                    registerPublisher(ntData::update);
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (double[]) supplier.get()));
 
                 } else if (returnType == double.class || returnType == Double.class) {
-                    NTSupplierDouble ntData = new NTSupplierDouble(tableName,key, () -> (Double) supplier.get());
-                    registerPublisher(ntData::update);
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (double) supplier.get()));
                     
                 } else if (returnType == boolean.class || returnType == Boolean.class) {
-                    NTSupplierBoolean ntData = new NTSupplierBoolean(tableName,key, () -> (Boolean) supplier.get());
-                    registerPublisher(ntData::update);
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (boolean) supplier.get()));
 
                 } else if (returnType == Boolean[].class || returnType == boolean[].class) {
-                    NTSupplierBooleanArray ntData = new NTSupplierBooleanArray(tableName,key, () -> (Boolean[]) supplier.get());
-                    registerPublisher(ntData::update);
+                    registerPublisher(()-> NTPublisher.publish(getTableKey(), key, (double[]) supplier.get()));
                 } else {
                     System.err.println("[AutoNetworkPublisher] Not Supported Data type! " + returnType.getSimpleName());
                 }

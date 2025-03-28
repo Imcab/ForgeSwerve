@@ -1,4 +1,4 @@
-package lib.NetworkTableUtils.NTSubsystem.Interfaces;
+package lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
