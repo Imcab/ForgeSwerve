@@ -9,11 +9,9 @@ import com.pathplanner.lib.path.PathConstraints;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -23,15 +21,16 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import lib.Field.FieldObject;
-import lib.NetworkTableUtils.NTSubsystem.NetworkSubsystem;
-import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.AutoNetworkPublisher;
-import lib.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.NetworkCommand;
-import lib.Sim.RealDevice;
-import lib.Sim.SimulatedSubsystem;
-import lib.SwerveLib.PathFinding.PoseFinder;
-import lib.SwerveLib.Utils.SwerveModuleStateSupplier;
-import lib.SwerveLib.Visualizers.SwerveWidget;
+import lib.Forge.Field.FieldObject;
+import lib.Forge.NetworkTableUtils.NTSubsystem.NetworkSubsystem;
+import lib.Forge.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.AutoNetworkPublisher;
+import lib.Forge.NetworkTableUtils.NTSubsystem.Interfaces.Annotations.NetworkCommand;
+import lib.Forge.Sim.RealDevice;
+import lib.Forge.Sim.SimulatedSubsystem;
+import lib.Forge.SwerveLib.Odometer.ForgeSwerveDrivePoseEstimator;
+import lib.Forge.SwerveLib.PathFinding.PoseFinder;
+import lib.Forge.SwerveLib.Utils.SwerveModuleStateSupplier;
+import lib.Forge.SwerveLib.Visualizers.SwerveWidget;
 
 public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
 
@@ -64,19 +63,8 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
 
     private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleLocations());
 
-    private Rotation2d rawGyroRotation = new Rotation2d();
-
-    private SwerveModulePosition[] lastModulePositions =
-      new SwerveModulePosition[] {
-        new SwerveModulePosition(),
-        new SwerveModulePosition(),
-        new SwerveModulePosition(),
-        new SwerveModulePosition()
-      };
-
-    private SwerveDrivePoseEstimator poseEstimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
-
+    private final ForgeSwerveDrivePoseEstimator poseEstimator;
+    
     private final PIDConstants translationPPgains; 
     private final PIDConstants rotationPPgains;
     
@@ -116,6 +104,14 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         modules[2] = new SwerveModule(2);
         modules[3] = new SwerveModule(3);
 
+        poseEstimator = new ForgeSwerveDrivePoseEstimator(
+            kinematics,
+            ()-> gyroConnection(),
+            this::getModulePositions,
+            this::getnavXRotation,
+            true,
+            0.01);
+
         AutoBuilder.configure(
             this::getEstimatedPosition,
             this::setPose,
@@ -136,6 +132,7 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
             this::setPose,
             0.02,
             this);
+        
 
         if (!isInSimulation()) {
             new Thread(() -> {
@@ -208,6 +205,13 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
         getModuleLocations());
     }
 
+    private boolean gyroConnection(){
+        if (isInSimulation()) {
+            return false;
+        }
+        return navX.isConnected();
+    }
+
     public double getAngle(){
         return Math.IEEEremainder(navX.getAngle(), 360);
     }
@@ -233,51 +237,10 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
     }
 
     @Override
-    public void RealDevicesPeriodic(){
-
-        SwerveModulePosition[] modulePositions = getModulePositions();
-        SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
-    
-        for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-            moduleDeltas[moduleIndex] =
-                new SwerveModulePosition(
-                    modulePositions[moduleIndex].distanceMeters
-                        - lastModulePositions[moduleIndex].distanceMeters,
-                    modulePositions[moduleIndex].angle);
-            lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
-        }
-
-        if (navX.isConnected() == true) {
-            rawGyroRotation = getnavXRotation();
-        } else {
-        Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
-        }
-
-        poseEstimator.update(rawGyroRotation, modulePositions);
-        
-    }
+    public void RealDevicesPeriodic(){}
 
     @Override
-    public void SimulationDevicesPeriodic(){
-        SwerveModulePosition[] modulePositions = getModulePositions();
-        SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
-    
-        for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
-            moduleDeltas[moduleIndex] =
-                new SwerveModulePosition(
-                    modulePositions[moduleIndex].distanceMeters
-                        - lastModulePositions[moduleIndex].distanceMeters,
-                    modulePositions[moduleIndex].angle);
-            lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
-        }
-
-        Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
-
-        poseEstimator.update(rawGyroRotation, modulePositions);
-
-    }
+    public void SimulationDevicesPeriodic(){}
 
     public void runVelocity(ChassisSpeeds speeds) {
         // Calculate module setpoints
@@ -372,12 +335,12 @@ public class Holonomic extends NetworkSubsystem implements SimulatedSubsystem{
     } 
 
     public void setPose(Pose2d pose) {
-        poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+        poseEstimator.resetPosition(pose);
     }
 
     @AutoNetworkPublisher(key = "Odometry/BotPose2D")
     public Pose2d getEstimatedPosition() {
-        return poseEstimator.getEstimatedPosition();
+        return poseEstimator.getEstimatedPose();
     }
 
     @AutoNetworkPublisher(key = "Odometry/BotHeading")    

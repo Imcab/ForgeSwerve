@@ -4,59 +4,48 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import lib.NetworkTableUtils.MultipleData.NTPublisher;
-import lib.NetworkTableUtils.NormalPublishers.NTBoolean;
-import lib.NetworkTableUtils.NormalPublishers.NTDouble;
-import lib.NetworkTableUtils.NormalPublishers.NTString;
+import lib.Forge.NetworkTableUtils.NormalPublishers.NTString;
+import lib.Forge.RobotState.RobotLifeCycle;
 
 public class Robot extends TimedRobot {
+
+  private final NTString autoSelected = new NTString("Robot/Auto/Selected");
+
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
 
-  private final NTString autoSelected = new NTString("Robot/Auto/Selected");
-  private final NTBoolean isAuto = new NTBoolean("Robot/Auto/On");
-  private final NTBoolean isAutoDisabled = new NTBoolean("Robot/Auto/Disabled");
-
-  private final NTBoolean isTeleop = new NTBoolean("Robot/Teleop/On");
-  private final NTBoolean isTeleopDisabled = new NTBoolean("Robot/Teleop/Disabled");
-
-  private final NTDouble matchTime = new NTDouble("Robot/MatchTime");
-  
   public Robot() {
     m_robotContainer = new RobotContainer();
   }
 
   @Override
   public void robotPeriodic() {
-    NTPublisher.updateAllSendables();
     CommandScheduler.getInstance().run();
-
-    matchTime.sendDouble(DriverStation.getMatchTime());
-
-    isTeleop.sendBoolean(isTeleop());
-    isTeleopDisabled.sendBoolean(!isTeleopEnabled());
-
-    isAuto.sendBoolean(isAutonomous());
-    isAutoDisabled.sendBoolean(!isAutonomousEnabled());
-
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::robotPeriodic);
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::disabledInit);
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::disabledPeriodic);
+  }
 
   @Override
-  public void disabledExit() {}
+  public void disabledExit() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::disabledExit);
+  }
 
   @Override
   public void autonomousInit() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::autonomousInit);
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
@@ -66,23 +55,32 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::autonomousPeriodic);
+  }
 
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::autonomousExit);
+  }
 
   @Override
   public void teleopInit() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::teleopInit);
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
   }
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::teleopPeriodic);
+  }
 
   @Override
-  public void teleopExit() {}
+  public void teleopExit() {
+    m_robotContainer.getLifeCycle().forEach(RobotLifeCycle::teleopExit);
+  }
 
   @Override
   public void testInit() {
