@@ -2,7 +2,6 @@ package lib.Forge.RobotState;
 
 public interface RobotLifeCycle {
 
-    default void robotPeriodic() {}
     default void teleopInit() {}
     default void teleopPeriodic() {}
     default void teleopExit() {}

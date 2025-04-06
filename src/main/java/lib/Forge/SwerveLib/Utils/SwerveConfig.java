@@ -5,6 +5,9 @@ import edu.wpi.first.math.util.Units;
 
 public class SwerveConfig{
     
+    /**
+     * Class that stores the most common motors used for a swerve drive
+     */
     public static class SingleMotorGearBoxes{
         
         public static DCMotor kNEO = DCMotor.getNEO(1);
@@ -12,6 +15,11 @@ public class SwerveConfig{
 
     }
 
+    /**
+     * Class for storing swerve module reductions
+     * @param driveReduction drive reduction
+     * @param turnReduction turn reduction
+     */
     public record ModuleReductions(double driveReduction, double turnReduction) {}
 
     public record Wheel(double radiusInches) {
@@ -22,6 +30,11 @@ public class SwerveConfig{
         public double diameterInches(){return radiusInches * 2;}
     }
 
+    /**
+     * Class for storing swerve module current limits in Ampers
+     * @param driveCurrentAmps
+     * @param turnCurrentAmps
+     */
     public record ModuleCurrentLimits(int driveCurrentAmps, int turnCurrentAmps) {}
     
 }

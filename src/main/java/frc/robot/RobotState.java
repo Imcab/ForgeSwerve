@@ -1,12 +1,17 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
-import lib.Forge.NetworkTableUtils.MultipleData.NTPublisher;
-import lib.Forge.NetworkTableUtils.NormalPublishers.NTBoolean;
-import lib.Forge.NetworkTableUtils.NormalPublishers.NTDouble;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import lib.Forge.NetworkTableUtils.NetworkMultipleData.NTPublisher;
+import lib.Forge.NetworkTableUtils.NetworkNormalPublishers.NTBoolean;
+import lib.Forge.NetworkTableUtils.NetworkNormalPublishers.NTDouble;
 import lib.Forge.RobotState.RobotLifeCycle;
 
-public class RobotState implements RobotLifeCycle{
+public final class RobotState extends SubsystemBase implements RobotLifeCycle{
 
     private final NTBoolean isAuto;
     private final NTBoolean isAutoDisabled;
@@ -16,8 +21,14 @@ public class RobotState implements RobotLifeCycle{
 
     private final NTDouble matchTime;
 
-    public RobotState() {
+    private final Alert robotMode = new Alert("Robot is being simulated", AlertType.kInfo);
 
+    private static RobotState instance;
+
+    private RobotState() {
+
+        robotMode.set(RobotBase.isSimulation());
+            
         isAuto = new NTBoolean("Robot/Auto/On");
         isAutoDisabled = new NTBoolean("Robot/Auto/Disabled");
 
@@ -27,8 +38,16 @@ public class RobotState implements RobotLifeCycle{
         matchTime = new NTDouble("Robot/MatchTime");
     }
 
+    public static synchronized RobotState getInstance(){
+
+        if (instance == null) {
+            instance = new RobotState();
+        }
+        return instance;
+    }
+
     @Override
-    public void robotPeriodic() {
+    public void periodic(){
         NTPublisher.updateAllSendables();
 
         matchTime.sendDouble(DriverStation.getMatchTime());
@@ -38,6 +57,10 @@ public class RobotState implements RobotLifeCycle{
 
         isAuto.sendBoolean(DriverStation.isAutonomous());
         isAutoDisabled.sendBoolean(!DriverStation.isAutonomousEnabled());
+    }
+
+    public Pose2d robotPosition(){
+        return NTPublisher.retrieve("NetworkSwerve", "Odometry/BotPose2D", Pose2d.kZero);
     }
 
     @Override
@@ -66,5 +89,6 @@ public class RobotState implements RobotLifeCycle{
 
     @Override
     public void teleopExit() {}
+
 
 }

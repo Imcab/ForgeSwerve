@@ -89,6 +89,19 @@ public class ForgeSwerveDrivePoseEstimator {
 
     }
 
+    /**
+     * Creates a new instance of {@link ForgeSwerveDrivePoseEstimator}.
+     * <p>
+     * <b>Warning: </b> Only one instance should be created. Running multiple instances
+     * simultaneously may cause conflicts in pose estimation.
+     *
+     * @param kinematics        The swerve drive kinematics model.
+     * @param gyroConnection    Supplier that indicates if the gyro is connected.
+     * @param getModulePositions Supplier for swerve module positions.
+     * @param getGyroRotation   Supplier for gyro rotation readings.
+     * @param createFieldWidget Whether to create a Field2d dashboard widget.
+     * @param period The period to update the pose Estimator
+     */
     public ForgeSwerveDrivePoseEstimator(
         SwerveDriveKinematics kinematics,
         BooleanSupplier gyroConnection,

@@ -6,7 +6,6 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import lib.Forge.Math.Operator;
 import lib.Forge.Math.Constants.ProfileGains.CompleteFeedForwardGains;
 import lib.Forge.Math.Constants.ProfileGains.MotionModelGains;
-import lib.Forge.Math.Constants.ProfileGains.MotionModelGainsExpo;
 import lib.Forge.Math.Constants.ProfileGains.PIDGains;
 import lib.Forge.Math.Constants.ProfileGains.SimpleFeedForwardGains;
 
@@ -230,106 +229,6 @@ public class Control {
 
         public void reset(double position, double velocity){
             controller.reset(position, velocity);
-        }
-
-    }
-
-    public static class MotionModelExpoControl extends Control.ControlBase<TrapezoidProfile.State, Double>{
-
-        public static final double DEFAULT_PERIOD = 0.02;
-
-        private final ProfiledPIDController controller;
-        private MotionModelGainsExpo gains;
-        private double jerk;
-
-        private double lastAcceleration = 0.0;
-        private double lastVelocity = 0.0;
-        private double dt;
-
-        public MotionModelExpoControl(MotionModelGainsExpo gains, double period) {
-
-            this.gains = gains;
-            this.dt = period;
-
-            this.controller = new ProfiledPIDController(
-                gains.kP(), gains.kI(), gains.kD(),
-                new TrapezoidProfile.Constraints(
-                    gains.maxVelocity(), gains.maxAcceleration()), dt);
-            this.jerk = gains.jerk();
-        }
-
-        public void setGains(MotionModelGainsExpo gains){
-            controller.setP(gains.kP());
-            controller.setI(gains.kI());
-            controller.setD(gains.kD());
-            controller.setConstraints(new TrapezoidProfile.Constraints(gains.maxVelocity(), gains.maxAcceleration()));
-            this.jerk = gains.jerk();
-        }
-
-        public MotionModelGainsExpo getGains(){
-            return gains;
-        }
-
-        private double applySCurve(double desiredAcceleration){
-            double deltaAcceleration = desiredAcceleration - lastAcceleration;
-            double limitedDelta = Math.max(-jerk * dt, Math.min(jerk * dt, deltaAcceleration));
-            lastAcceleration += limitedDelta;
-            return lastAcceleration;
-        }
-
-        @Override
-        public ControlResult calculate(TrapezoidProfile.State setpoint, Double measurement) {
-            return ()-> {
-                double velocity = controller.calculate(measurement, setpoint);
-                double acceleration = (velocity - lastVelocity) / dt;
-                double limitedAcceleration = applySCurve(acceleration);
-                lastVelocity = velocity;
-
-                return limitedAcceleration;
-            };
-        }
-
-        @Override
-        public ControlResult calculate(Double measurement) {
-            return ()-> {
-                double velocity = controller.calculate(measurement);
-                double acceleration = (velocity - lastVelocity) / dt;
-                double limitedAcceleration = applySCurve(acceleration);
-                lastVelocity = velocity;
-                return limitedAcceleration;
-            };
-        }
-
-        @Override
-        public TrapezoidProfile.State getSetpoint() {
-            return controller.getSetpoint();
-        }
-
-        @Override
-        public void setSetpoint(TrapezoidProfile.State setpoint) {
-            controller.setGoal(setpoint);
-        }
-
-        public void disableContinuousInput(){
-            controller.disableContinuousInput();
-        }
-
-        public void continuousInput(double minInput, double maxInput){
-            controller.enableContinuousInput(minInput, maxInput);
-        }
-
-        public void setTolerance(double tolerance, double velocityTolerance){
-            controller.setTolerance(tolerance, velocityTolerance);
-        }
-
-        public ProfiledPIDController getController() {
-            return controller;
-        }
-
-        public void reset(double position, double velocity){
-            controller.reset(position, velocity);
-            lastVelocity = velocity;
-            lastAcceleration = 0.0;
         }
 
     }

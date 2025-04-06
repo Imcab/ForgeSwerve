@@ -16,7 +16,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.DriveTrain.Holonomic;
+import frc.robot.DriveTrain.NetworkSwerve;
 import lib.Forge.Field.AllianceUtil;
 import lib.Forge.Math.Operator;
 import lib.Forge.Math.Constants.ProfileGains.MotionModelGains;
@@ -44,7 +44,7 @@ public class DriveCommands {
     }
 
     public static Command joystickDrive(
-        Holonomic drive,
+        NetworkSwerve drive,
         DoubleSupplier xSupplier,
         DoubleSupplier ySupplier,
         DoubleSupplier omegaSupplier){
@@ -80,7 +80,7 @@ public class DriveCommands {
     private static final double ANGLE_MAX_ACCELERATION = 20.0;
   
     public static Command joystickSnapAngle(
-        Holonomic drive,
+        NetworkSwerve drive,
         DoubleSupplier xSupplier,
         DoubleSupplier ySupplier,
         Supplier<Rotation2d> angleSupplier) {
@@ -129,7 +129,7 @@ public class DriveCommands {
     private static final double FF_START_DELAY = 2.0; // Secs
     private static final double FF_RAMP_RATE = 0.1; // Volts/Sec
 
-    public static Command feedforwardCharacterization(Holonomic drive) {
+    public static Command feedforwardCharacterization(NetworkSwerve drive) {
     List<Double> velocitySamples = new LinkedList<>();
     List<Double> voltageSamples = new LinkedList<>();
     Timer timer = new Timer();

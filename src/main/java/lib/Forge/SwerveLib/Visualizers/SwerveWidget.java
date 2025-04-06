@@ -5,7 +5,7 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import lib.Forge.NetworkTableUtils.MultipleData.NTPublisher;
+import lib.Forge.NetworkTableUtils.NetworkMultipleData.NTPublisher;
 import lib.Forge.SwerveLib.Utils.SwerveModuleStateSupplier;
 
 /**

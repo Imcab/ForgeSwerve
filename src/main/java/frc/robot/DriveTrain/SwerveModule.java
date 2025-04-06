@@ -1,12 +1,7 @@
 package frc.robot.DriveTrain;
 
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -19,6 +14,7 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import lib.Forge.Math.Constants.ProfileGains.PIDGains;
 import lib.Forge.Math.Constants.ProfileGains.SimpleFeedForwardGains;
 import lib.Forge.Math.Controllers.Control.PIDControl;
+import lib.Forge.REV.SparkMax.ForgeSparkMax;
 import lib.Forge.Sim.RealDevice;
 import lib.Forge.Sim.SimulatedDevice;
 import lib.Forge.Sim.SimulatedSubsystem;
@@ -33,21 +29,11 @@ public class SwerveModule implements SimulatedSubsystem{
     public static final double turnMotorReduction =  18.75;
 
     @RealDevice
-    private SparkMax driveSparkMax;
+    private ForgeSparkMax driveSparkMax;
     @RealDevice
-    private SparkMax turnSparkMax;
+    private ForgeSparkMax turnSparkMax;
     @RealDevice
     private CANcoder absoluteEncoder;
-
-    @RealDevice
-    private RelativeEncoder enc_drive;
-    @RealDevice
-    private RelativeEncoder enc_turn;
-
-    @RealDevice
-    private SparkMaxConfig config_drive = new SparkMaxConfig();
-    @RealDevice
-    private SparkMaxConfig config_turn = new SparkMaxConfig();
 
     @SimulatedDevice
     private DCMotorSim driveSim =
@@ -149,9 +135,9 @@ public class SwerveModule implements SimulatedSubsystem{
         this.moduleAngle = 
         absoluteEncoder.isConnected() ? 
             Rotation2d.fromRotations(absoluteEncoder.getAbsolutePosition().getValueAsDouble() - Offset) : 
-            Rotation2d.fromRotations(enc_turn.getPosition() / turnMotorReduction);
+            Rotation2d.fromRotations(turnSparkMax.getPosition().withReduction(turnMotorReduction).getRead());
 
-        this.driveVelocity = Units.rotationsPerMinuteToRadiansPerSecond(enc_drive.getVelocity());
+        this.driveVelocity = driveSparkMax.getVelocity().toRadiansPerSecond().getRead();
 
         driveSparkMax.setVoltage(driveVoltage);
         turnSparkMax.setVoltage(turnVoltage);
@@ -195,7 +181,7 @@ public class SwerveModule implements SimulatedSubsystem{
 
     public double getDrivePositionMeters(){
 
-        double position = isInSimulation() ? driveSim.getAngularPositionRad() : Units.rotationsToRadians(enc_drive.getPosition());
+        double position = isInSimulation() ? driveSim.getAngularPositionRad() : driveSparkMax.getPosition().toRadians().getRead();
 
         return position * WHEELRADIUS;
       }
@@ -242,8 +228,8 @@ public class SwerveModule implements SimulatedSubsystem{
     private void createSparks(int index){
         switch (index) {
             case 0:
-              driveSparkMax = new SparkMax(DriveConstants.frontLeft.DrivePort, MotorType.kBrushless);
-              turnSparkMax = new SparkMax(DriveConstants.frontLeft.TurnPort, MotorType.kBrushless);
+              driveSparkMax = new ForgeSparkMax(DriveConstants.frontLeft.DrivePort);
+              turnSparkMax = new ForgeSparkMax(DriveConstants.frontLeft.TurnPort);
               absoluteEncoder = new CANcoder(DriveConstants.frontLeft.EncPort);
               isDriveMotorInverted = DriveConstants.frontLeft.DrivemotorReversed;
               isTurnMotorInverted = DriveConstants.frontLeft.TurnmotorReversed;
@@ -251,8 +237,8 @@ public class SwerveModule implements SimulatedSubsystem{
               
               break;
             case 1:
-              driveSparkMax = new SparkMax(DriveConstants.frontRight.DrivePort, MotorType.kBrushless);
-              turnSparkMax = new SparkMax(DriveConstants.frontRight.TurnPort, MotorType.kBrushless);
+              driveSparkMax = new ForgeSparkMax(DriveConstants.frontRight.DrivePort);
+              turnSparkMax = new ForgeSparkMax(DriveConstants.frontRight.TurnPort);
               absoluteEncoder = new CANcoder(DriveConstants.frontRight.EncPort);
               isDriveMotorInverted = DriveConstants.frontRight.DrivemotorReversed;
               isTurnMotorInverted = DriveConstants.frontRight.TurnmotorReversed;
@@ -261,8 +247,8 @@ public class SwerveModule implements SimulatedSubsystem{
   
               break;
             case 2:
-              driveSparkMax = new SparkMax(DriveConstants.backLeft.DrivePort, MotorType.kBrushless);
-              turnSparkMax = new SparkMax(DriveConstants.backLeft.TurnPort, MotorType.kBrushless);
+              driveSparkMax = new ForgeSparkMax(DriveConstants.backLeft.DrivePort);
+              turnSparkMax = new ForgeSparkMax(DriveConstants.backLeft.TurnPort);
               absoluteEncoder = new CANcoder(DriveConstants.backLeft.EncPort);
               isDriveMotorInverted = DriveConstants.backLeft.DrivemotorReversed;
               isTurnMotorInverted = DriveConstants.backLeft.TurnmotorReversed;
@@ -270,8 +256,8 @@ public class SwerveModule implements SimulatedSubsystem{
               
               break;
             case 3:
-              driveSparkMax = new SparkMax(DriveConstants.backRight.DrivePort, MotorType.kBrushless);
-              turnSparkMax = new SparkMax(DriveConstants.backRight.TurnPort, MotorType.kBrushless);
+              driveSparkMax = new ForgeSparkMax(DriveConstants.backRight.DrivePort);
+              turnSparkMax = new ForgeSparkMax(DriveConstants.backRight.TurnPort);
               absoluteEncoder = new CANcoder(DriveConstants.backRight.EncPort);
               isDriveMotorInverted = DriveConstants.backRight.DrivemotorReversed;
               isTurnMotorInverted = DriveConstants.backRight.TurnmotorReversed;
@@ -282,40 +268,17 @@ public class SwerveModule implements SimulatedSubsystem{
               throw new RuntimeException("Invalid module index");
           }
 
-        driveSparkMax.setCANTimeout(250);
-        turnSparkMax.setCANTimeout(250);
+        driveSparkMax.flashConfiguration(
+            isDriveMotorInverted,
+            IdleMode.kBrake,
+            43,
+            true);
+        
+        turnSparkMax.flashConfiguration(
+            isTurnMotorInverted,
+            IdleMode.kBrake,
+            20,
+            true);
 
-        enc_drive = driveSparkMax.getEncoder();
-
-        enc_drive.setPosition(0.0);
-
-        enc_turn = turnSparkMax.getEncoder();
-
-          config_drive
-        .inverted(isDriveMotorInverted)
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(43)
-        .voltageCompensation(12);
-  
-        config_drive.encoder
-        .uvwAverageDepth(2)
-        .uvwMeasurementPeriod(10);
-  
-        driveSparkMax.configure(config_drive, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-        config_turn
-        .inverted(isTurnMotorInverted)
-        .idleMode(IdleMode.kBrake)
-        .smartCurrentLimit(20)
-        .voltageCompensation(12);
-  
-        config_turn.encoder
-        .uvwAverageDepth(2)
-        .uvwMeasurementPeriod(10);
-
-        turnSparkMax.configure(config_turn, com.revrobotics.spark.SparkBase.ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-        driveSparkMax.setCANTimeout(0);
-        turnSparkMax.setCANTimeout(0);
     }
 }
