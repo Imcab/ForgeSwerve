@@ -26,7 +26,6 @@ public class Domain{
      * @param min the minimum value
      * @param max the maximum value 
      * @throws IllegalArgumentException if the minimum value is greater than the maximum value
-     * @throws IllegalArgumentException if the domain is empty
      */
     public Domain(double min , double max){
 

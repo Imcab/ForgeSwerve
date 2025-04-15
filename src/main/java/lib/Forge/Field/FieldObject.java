@@ -10,5 +10,8 @@ import edu.wpi.first.math.util.Units;
 */
 public record FieldObject(double length, double width) {
 
-    public static final FieldObject REEFSCAPE = new FieldObject(Units.inchesToMeters(690.876), Units.inchesToMeters(317));
+    public static final FieldObject REEFSCAPE = new FieldObject(
+        
+        
+    Units.inchesToMeters(690.876), Units.inchesToMeters(317));
 }

@@ -24,8 +24,7 @@ public class Conditional {
     }
 
     public static Double chooseBetween(Double a, Double b, boolean condition) {
-        Chooser<Double> c = (x, y, cond) -> cond ? Epsilon.equals(x, y) ? x : y : y;
-        return c.from(a, b, condition); 
+        return condition ? a : b;
     }
 
     public static<T> T chooseBetween(T a, T b, Predicate<T> condition) {
